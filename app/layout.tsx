@@ -1,23 +1,25 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const outfit = Outfit({
   subsets: ["latin"],
+  variable: "--font-heading",
+  weight: ["600", "700", "800", "900"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
+  variable: "--font-sans",
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "AR Geometri - Pembelajaran Bangun Ruang WebAR",
-  description: "Eksplorasi bangun ruang tiga dimensi secara interaktif melalui kamera Augmented Reality.",
+  title: "AR Geometri - Pembelajaran Bangun Ruang WebAR Interaktif",
+  description: "Eksplorasi bangun ruang 3D interaktif di dunia nyata dengan WebAR dan kamera interaktif.",
 };
 
 export const viewport: Viewport = {
@@ -28,24 +30,24 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="id"
       className={cn(
         "h-full",
         "antialiased",
-        geistSans.variable,
-        geistMono.variable,
-        "font-sans",
-        inter.variable
+        outfit.variable,
+        plusJakartaSans.variable,
+        "font-sans"
       )}
     >
-      <body className="min-h-full flex flex-col bg-zinc-950 text-foreground selection:bg-indigo-500 selection:text-white">
-        {/* Mobile-Only Device Viewport Container */}
-        <div className="w-full max-w-md mx-auto min-h-screen bg-background relative shadow-2xl border-x border-border/30 flex flex-col overflow-x-hidden">
-          {children}
-        </div>
+      <body className="min-h-full flex flex-col bg-background text-foreground font-sans selection:bg-accent selection:text-accent-foreground">
+        {children}
       </body>
     </html>
   );

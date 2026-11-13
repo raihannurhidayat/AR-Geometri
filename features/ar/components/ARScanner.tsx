@@ -13,14 +13,16 @@ import {
   HelpCircle,
   CameraOff,
   Sparkles,
-  ChevronUp,
+  ChevronDown,
   X,
   Scan,
   RefreshCw,
   CheckCircle2,
   Move,
+  Lightbulb,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { GEOMETRIES } from "@/features/geometry/data/geometries";
 import { GeometryItem, ScannerStatus } from "@/features/geometry/types/geometry";
@@ -168,7 +170,7 @@ export function ARScanner() {
       setIsScanning(false);
       setIsMarkerDetected(true);
       setStatus("detected");
-    }, 600);
+    }, 500);
   };
 
   const handleResetScan = () => {
@@ -189,19 +191,19 @@ export function ARScanner() {
     const group = new THREE.Group();
 
     const mainMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x3b82f6,
+      color: 0x8b5cf6,
       metalness: 0.1,
-      roughness: 0.2,
-      transmission: 0.2,
+      roughness: 0.25,
+      transmission: 0.25,
       transparent: true,
-      opacity: 0.92,
-      clearcoat: 0.5,
+      opacity: 0.94,
+      clearcoat: 0.6,
       clearcoatRoughness: 0.1,
     });
 
     const wireframeMaterial = new THREE.LineBasicMaterial({
-      color: 0xffffff,
-      linewidth: 2,
+      color: 0x1e293b,
+      linewidth: 3,
     });
 
     let geometry: THREE.BufferGeometry;
@@ -209,31 +211,31 @@ export function ARScanner() {
     switch (geomId) {
       case "cube":
         geometry = new THREE.BoxGeometry(2, 2, 2);
-        mainMaterial.color.setHex(0x3b82f6);
+        mainMaterial.color.setHex(0x8b5cf6); // Vivid Violet
         break;
       case "cuboid":
         geometry = new THREE.BoxGeometry(2.8, 1.6, 1.8);
-        mainMaterial.color.setHex(0x06b6d4);
+        mainMaterial.color.setHex(0x06b6d4); // Cyan
         break;
       case "prism":
         geometry = new THREE.CylinderGeometry(1.6, 1.6, 2.4, 3);
-        mainMaterial.color.setHex(0x10b981);
+        mainMaterial.color.setHex(0x34d399); // Mint / Emerald
         break;
       case "pyramid":
         geometry = new THREE.ConeGeometry(1.8, 2.4, 4);
-        mainMaterial.color.setHex(0xf59e0b);
+        mainMaterial.color.setHex(0xfbbf24); // Amber / Yellow
         break;
       case "cylinder":
         geometry = new THREE.CylinderGeometry(1.2, 1.2, 2.5, 32);
-        mainMaterial.color.setHex(0x8b5cf6);
+        mainMaterial.color.setHex(0xf472b6); // Hot Pink
         break;
       case "cone":
         geometry = new THREE.ConeGeometry(1.5, 2.6, 32);
-        mainMaterial.color.setHex(0xf43f5e);
+        mainMaterial.color.setHex(0xf43f5e); // Rose
         break;
       case "sphere":
         geometry = new THREE.SphereGeometry(1.4, 32, 24);
-        mainMaterial.color.setHex(0x4f46e5);
+        mainMaterial.color.setHex(0x3b82f6); // Sky Blue
         break;
       default:
         geometry = new THREE.BoxGeometry(2, 2, 2);
@@ -242,7 +244,7 @@ export function ARScanner() {
     const mesh = new THREE.Mesh(geometry, mainMaterial);
     group.add(mesh);
 
-    // Glowing edges
+    // Chunky outline edges
     const edges = new THREE.EdgesGeometry(geometry);
     const line = new THREE.LineSegments(edges, wireframeMaterial);
     group.add(line);
@@ -269,14 +271,14 @@ export function ARScanner() {
     container.appendChild(renderer.domElement);
 
     // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.3);
     scene.add(ambientLight);
 
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.5);
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.6);
     dirLight1.position.set(5, 10, 7);
     scene.add(dirLight1);
 
-    const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 1);
+    const dirLight2 = new THREE.DirectionalLight(0xfbbf24, 0.8);
     dirLight2.position.set(-5, -5, 2);
     scene.add(dirLight2);
 
@@ -373,9 +375,9 @@ export function ARScanner() {
     const container = canvasContainerRef.current;
     if (!container || !isMarkerDetected) return;
 
-    // A. Mouse Pointer Drag (Desktop)
+    // Mouse Pointer Drag (Desktop)
     const onPointerDown = (e: PointerEvent) => {
-      if (e.pointerType === "touch") return; // Touch events handled by onTouchStart
+      if (e.pointerType === "touch") return;
       if (e.button !== 0) return;
       isPointerDownRef.current = true;
       lastPointerPosRef.current = { x: e.clientX, y: e.clientY };
@@ -401,7 +403,7 @@ export function ARScanner() {
       isPointerDownRef.current = false;
     };
 
-    // B. Mouse Wheel Zoom (Desktop)
+    // Mouse Wheel Zoom (Desktop)
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       disableAutoRotate();
@@ -415,7 +417,7 @@ export function ARScanner() {
       });
     };
 
-    // C. Touch Drag (1-finger rotate) & Pinch (2-finger zoom) on Mobile
+    // Touch Drag (1-finger rotate) & Pinch (2-finger zoom) on Mobile
     const onTouchStart = (e: TouchEvent) => {
       disableAutoRotate();
       if (e.touches.length === 1) {
@@ -515,7 +517,7 @@ export function ARScanner() {
   };
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-black text-white select-none">
+    <div className="relative h-screen w-full overflow-hidden bg-slate-950 text-foreground select-none">
       {/* 1. Live Background Video Stream */}
       <video
         ref={videoRef}
@@ -526,7 +528,7 @@ export function ARScanner() {
       />
 
       {/* Subtle overlay shading for HUD readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/70 pointer-events-none z-10" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60 pointer-events-none z-10" />
 
       {/* 2. Interactive Three.js 3D Virtual Canvas (Mouse drag/scroll & Touch drag/pinch) */}
       <div
@@ -539,93 +541,94 @@ export function ARScanner() {
         )}
       />
 
-      {/* 3. Scanning Reticle (Center Viewfinder) */}
-      <div className="absolute inset-0 z-15 flex flex-col items-center justify-center pointer-events-none">
+      {/* 3. Scanning Reticle (Center Viewfinder) with Playful Geometric Pop Style */}
+      <div className="absolute inset-0 z-15 flex flex-col items-center justify-center pointer-events-none px-4">
         <div
           className={cn(
-            "relative size-56 rounded-3xl flex flex-col items-center justify-center transition-all duration-300",
+            "relative size-60 sm:size-64 rounded-3xl flex flex-col items-center justify-center transition-all duration-300",
             isMarkerDetected
-              ? "border-2 border-emerald-400/80 shadow-[0_0_20px_rgba(52,211,153,0.25)]"
-              : "border-2 border-dashed border-white/40"
+              ? "border-3 border-quaternary bg-quaternary/10 shadow-[0_0_24px_rgba(52,211,153,0.35)]"
+              : "border-3 border-dashed border-white/60 bg-black/15"
           )}
         >
           {/* Animated Scanning Laser Line (only when searching) */}
           {status !== "error" && !isMarkerDetected && (
-            <div className="absolute inset-x-2 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_12px_#38bdf8] animate-pulse top-1/2 -translate-y-1/2" />
+            <div className="absolute inset-x-2 h-1 bg-gradient-to-r from-transparent via-[#FBBF24] to-transparent shadow-[0_0_12px_#FBBF24] animate-pulse top-1/2 -translate-y-1/2" />
           )}
 
-          {/* Corner Markers */}
+          {/* Chunky Corner Brackets */}
           <div
             className={cn(
-              "absolute -top-1.5 -left-1.5 size-5 border-t-3 border-l-3 rounded-tl-xl transition-colors",
-              isMarkerDetected ? "border-emerald-400" : "border-cyan-400"
+              "absolute -top-2 -left-2 size-6 border-t-4 border-l-4 rounded-tl-xl transition-colors",
+              isMarkerDetected ? "border-quaternary" : "border-tertiary"
             )}
           />
           <div
             className={cn(
-              "absolute -top-1.5 -right-1.5 size-5 border-t-3 border-r-3 rounded-tr-xl transition-colors",
-              isMarkerDetected ? "border-emerald-400" : "border-cyan-400"
+              "absolute -top-2 -right-2 size-6 border-t-4 border-r-4 rounded-tr-xl transition-colors",
+              isMarkerDetected ? "border-quaternary" : "border-tertiary"
             )}
           />
           <div
             className={cn(
-              "absolute -bottom-1.5 -left-1.5 size-5 border-b-3 border-l-3 rounded-bl-xl transition-colors",
-              isMarkerDetected ? "border-emerald-400" : "border-cyan-400"
+              "absolute -bottom-2 -left-2 size-6 border-b-4 border-l-4 rounded-bl-xl transition-colors",
+              isMarkerDetected ? "border-quaternary" : "border-tertiary"
             )}
           />
           <div
             className={cn(
-              "absolute -bottom-1.5 -right-1.5 size-5 border-b-3 border-r-3 rounded-br-xl transition-colors",
-              isMarkerDetected ? "border-emerald-400" : "border-cyan-400"
+              "absolute -bottom-2 -right-2 size-6 border-b-4 border-r-4 rounded-br-xl transition-colors",
+              isMarkerDetected ? "border-quaternary" : "border-tertiary"
             )}
           />
 
-          {/* Center Scan CTA Button (When marker is not yet detected) */}
+          {/* Center Scan Candy Button (When marker is not yet detected) */}
           {!isMarkerDetected && status !== "error" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-              <button
-                type="button"
+              <Button
+                variant="candyYellow"
+                size="lg"
                 onClick={handleScanMarker}
                 disabled={isScanning}
-                className="pointer-events-auto flex items-center gap-2 rounded-full bg-cyan-400 hover:bg-cyan-300 active:scale-95 text-slate-950 font-bold px-4 py-2 text-xs shadow-lg shadow-cyan-500/30 transition-all cursor-pointer"
+                className="pointer-events-auto shadow-[4px_4px_0px_#1E293B] gap-2 h-11 px-5 text-xs sm:text-sm font-extrabold"
               >
                 {isScanning ? (
                   <>
-                    <RefreshCw className="size-3.5 animate-spin" />
-                    <span>Mendeteksi...</span>
+                    <RefreshCw className="size-4 animate-spin text-foreground" strokeWidth={2.5} />
+                    <span>Menganalisis...</span>
                   </>
                 ) : (
                   <>
-                    <Scan className="size-3.5" />
+                    <Scan className="size-4.5 text-foreground" strokeWidth={2.5} />
                     <span>Pindai Marker</span>
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           )}
 
-          {/* Instruction label under reticle */}
-          <div className="absolute -bottom-14 text-center px-2 w-full">
+          {/* Instruction Label under reticle as a Playful Sticker Pill */}
+          <div className="absolute -bottom-16 text-center px-2 w-full">
             <span
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium backdrop-blur-md border shadow-xs transition-colors",
+                "inline-flex items-center gap-2 rounded-full border-2 border-border px-4 py-1.5 text-xs font-bold shadow-[3px_3px_0px_#1E293B] transition-all",
                 isMarkerDetected
-                  ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/30"
-                  : "bg-black/70 text-slate-200 border-white/10"
+                  ? "bg-quaternary text-foreground"
+                  : "bg-white text-foreground"
               )}
             >
               {isMarkerDetected ? (
                 <>
-                  <CheckCircle2 className="size-3 text-emerald-400" />
-                  <span>{activeGeometry.name} Terdeteksi</span>
+                  <CheckCircle2 className="size-4 text-foreground" strokeWidth={3} />
+                  <span>{activeGeometry.name} Terdeteksi! 🎉</span>
                 </>
               ) : isScanning ? (
                 <>
-                  <RefreshCw className="size-3 animate-spin text-cyan-400" />
-                  <span>Menganalisis pola marker...</span>
+                  <RefreshCw className="size-3.5 animate-spin text-accent" strokeWidth={2.5} />
+                  <span>Menganalisis pola kartu marker...</span>
                 </>
               ) : (
-                <span>Arahkan ke kartu marker lalu klik Pindai</span>
+                <span>Arahkan ke kartu marker lalu klik Pindai 🔍</span>
               )}
             </span>
           </div>
@@ -633,22 +636,23 @@ export function ARScanner() {
       </div>
 
       {/* 4. Top Floating Header HUD */}
-      <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between p-3">
+      <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between p-3 sm:p-4">
+        {/* Back to Home Candy Button */}
         <Link
           href="/"
           onClick={stopCamera}
           className={cn(
-            buttonVariants({ size: "sm", variant: "outline" }),
-            "rounded-full bg-black/50 backdrop-blur-md border-white/20 text-white hover:bg-black/70 hover:text-white flex items-center gap-1.5 text-xs font-semibold"
+            buttonVariants({ variant: "candySecondary", size: "sm" }),
+            "gap-1.5 shadow-[3px_3px_0px_#1E293B] text-xs font-bold"
           )}
         >
-          <ArrowLeft className="size-4" />
+          <ArrowLeft className="size-4" strokeWidth={2.5} />
           <span>Beranda</span>
         </Link>
 
         {/* Marker Switcher & Quick Help */}
         <div className="flex items-center gap-2">
-          {/* Target Selector */}
+          {/* Target Selector in Sticker Pill Style */}
           <div className="relative">
             <select
               aria-label="Pilih Model Bangun Ruang"
@@ -659,70 +663,73 @@ export function ARScanner() {
                   setActiveGeometry(found);
                 }
               }}
-              className="appearance-none rounded-full bg-black/60 backdrop-blur-md border border-cyan-500/40 px-3.5 py-1.5 pr-8 text-xs font-semibold text-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 cursor-pointer"
+              className="appearance-none rounded-full border-2 border-border bg-white text-foreground font-heading font-bold shadow-[3px_3px_0px_#1E293B] px-3.5 py-1.5 pr-8 text-xs focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
             >
               {GEOMETRIES.map((g) => (
-                <option key={g.id} value={g.id} className="bg-slate-900 text-white">
+                <option key={g.id} value={g.id} className="bg-white text-foreground font-sans">
                   {g.name} (#{g.targetIndex})
                 </option>
               ))}
             </select>
-            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-cyan-400">
-              <ChevronUp className="size-3 rotate-180" />
+            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-foreground">
+              <ChevronDown className="size-3.5" strokeWidth={2.5} />
             </div>
           </div>
 
+          {/* Help Button */}
           <Button
             size="icon-sm"
-            variant="outline"
+            variant="candyYellow"
             onClick={() => setIsMarkerModalOpen(true)}
-            className="rounded-full bg-black/50 backdrop-blur-md border-white/20 text-white hover:bg-black/70"
-            title="Lihat Marker"
+            className="shadow-[3px_3px_0px_#1E293B]"
+            title="Lihat Gambar Marker"
           >
-            <HelpCircle className="size-4 text-cyan-400" />
+            <HelpCircle className="size-4.5" strokeWidth={2.5} />
           </Button>
         </div>
       </header>
 
       {/* Gesture Hint Badge (Appears when marker is detected) */}
       {isMarkerDetected && (
-        <div className="absolute top-14 inset-x-0 z-25 flex justify-center pointer-events-none animate-in fade-in duration-300">
-          <div className="flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 px-3 py-1 text-[10px] text-slate-300">
-            <Move className="size-3 text-cyan-400" />
-            <span>Geser untuk memutar • Cubit/scroll untuk zoom</span>
+        <div className="absolute top-16 sm:top-18 inset-x-0 z-25 flex justify-center pointer-events-none animate-in fade-in duration-300">
+          <div className="flex items-center gap-2 rounded-full border-2 border-border bg-white text-foreground px-3.5 py-1 text-[11px] font-bold shadow-[3px_3px_0px_#1E293B]">
+            <Move className="size-3.5 text-accent" strokeWidth={2.5} />
+            <span>Sentuh untuk memutar • Cubit untuk zoom</span>
           </div>
         </div>
       )}
 
       {/* 5. Error Overlay (if camera fails or denied) */}
       {status === "error" && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-md">
-          <div className="max-w-md w-full rounded-3xl border border-rose-500/30 bg-slate-900/90 p-6 text-center shadow-2xl">
-            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-500 mb-4">
-              <CameraOff className="size-7" />
+        <div className="absolute inset-0 z-40 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md">
+          <div className="max-w-md w-full rounded-3xl border-3 border-border bg-[#FFFDF5] p-6 text-center shadow-[8px_8px_0px_#1E293B]">
+            <div className="mx-auto flex size-16 items-center justify-center rounded-2xl border-2 border-border bg-destructive text-white shadow-[4px_4px_0px_#1E293B] mb-4">
+              <CameraOff className="size-8" strokeWidth={2.5} />
             </div>
-            <h3 className="text-xl font-bold text-white">
-              {errorMessage || "Tidak Dapat Mengakses Kamera"}
+            <h3 className="font-heading text-xl sm:text-2xl font-black text-foreground">
+              {errorMessage || "Kamera Belum Terhubung"}
             </h3>
-            <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+            <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
               {errorHelpTip || "Pastikan peramban Anda memiliki izin akses ke kamera perangkat."}
             </p>
 
-            <div className="mt-6 flex flex-col gap-2.5">
+            <div className="mt-6 flex flex-col gap-3">
               <Button
+                variant="candyMint"
+                size="lg"
                 onClick={handleRetryCamera}
-                className="w-full rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold"
+                className="w-full h-12 text-sm"
               >
                 Coba Buka Kamera Lagi
               </Button>
               <Link
                 href="/"
                 className={cn(
-                  buttonVariants({ variant: "outline" }),
-                  "w-full rounded-xl border-white/20 text-white hover:bg-white/10 flex items-center justify-center text-sm"
+                  buttonVariants({ variant: "candySecondary", size: "lg" }),
+                  "w-full h-12 text-sm flex items-center justify-center"
                 )}
               >
-                Kembali ke Halaman Beranda
+                Kembali ke Beranda
               </Link>
             </div>
           </div>
@@ -730,174 +737,179 @@ export function ARScanner() {
       )}
 
       {/* 6. Bottom Floating Action Bar HUD */}
-      <footer className="absolute bottom-4 inset-x-0 z-30 flex flex-col items-center gap-2 px-2">
+      <footer className="absolute bottom-5 inset-x-0 z-30 flex flex-col items-center gap-2.5 px-3">
         {isMarkerDetected ? (
-          /* Controls Active when Marker is Detected */
+          /* Controls Active when Marker is Detected - Playful Floating Dock */
           <div className="flex flex-col items-center gap-2 animate-in fade-in slide-in-from-bottom duration-200">
-            <div className="flex items-center gap-1.5 rounded-full bg-black/65 backdrop-blur-md border border-white/20 p-1 shadow-xl">
+            <div className="flex items-center gap-2 rounded-full border-2 border-border bg-white p-1.5 shadow-[6px_6px_0px_#1E293B]">
               <Button
                 size="sm"
-                variant="ghost"
+                variant={isAutoRotate ? "candyMint" : "candySecondary"}
                 onClick={toggleAutoRotate}
-                className={`rounded-full h-7 px-2.5 text-[11px] gap-1 ${
-                  isAutoRotate ? "bg-cyan-500/20 text-cyan-300" : "text-white/80"
-                }`}
+                className="h-8 px-3 text-xs gap-1.5"
                 title="Toggle Putar Otomatis"
               >
-                <RotateCw className={`size-3 ${isAutoRotate ? "animate-spin" : ""}`} />
+                <RotateCw className={`size-3.5 ${isAutoRotate ? "animate-spin" : ""}`} strokeWidth={2.5} />
                 <span>Rotasi</span>
               </Button>
 
-              <div className="h-3.5 w-px bg-white/20" />
+              <div className="h-4 w-0.5 bg-border" />
 
               <Button
-                size="icon-xs"
-                variant="ghost"
+                size="icon-sm"
+                variant="candySecondary"
                 onClick={() => handleZoom(0.2)}
-                className="rounded-full text-white/80 hover:text-white"
-                title="Perbesar Model"
+                title="Perbesar Model (Zoom In)"
               >
-                <ZoomIn className="size-3" />
+                <ZoomIn className="size-4" strokeWidth={2.5} />
               </Button>
 
               <Button
-                size="icon-xs"
-                variant="ghost"
+                size="icon-sm"
+                variant="candySecondary"
                 onClick={() => handleZoom(-0.2)}
-                className="rounded-full text-white/80 hover:text-white"
-                title="Perkecil Model"
+                title="Perkecil Model (Zoom Out)"
               >
-                <ZoomOut className="size-3" />
+                <ZoomOut className="size-4" strokeWidth={2.5} />
               </Button>
 
               <Button
-                size="icon-xs"
-                variant="ghost"
+                size="icon-sm"
+                variant="candySecondary"
                 onClick={handleReset}
-                className="rounded-full text-white/80 hover:text-white"
                 title="Reset Ukuran & Posisi"
               >
-                <RotateCcw className="size-3" />
+                <RotateCcw className="size-4" strokeWidth={2.5} />
               </Button>
 
-              <div className="h-3.5 w-px bg-white/20" />
+              <div className="h-4 w-0.5 bg-border" />
 
               {/* Formula Details Toggle */}
               <Button
                 size="sm"
+                variant="candy"
                 onClick={() => setIsFormulaDrawerOpen(true)}
-                className="rounded-full h-7 px-2.5 text-[11px] bg-indigo-600 hover:bg-indigo-500 text-white font-semibold gap-1"
+                className="h-8 px-3.5 text-xs gap-1.5"
               >
-                <BookOpen className="size-3" />
+                <BookOpen className="size-3.5" strokeWidth={2.5} />
                 <span>Rumus</span>
               </Button>
             </div>
 
             {/* Quick Button to Reset / Scan Other Marker */}
-            <button
-              type="button"
+            <Button
+              size="xs"
+              variant="candySecondary"
               onClick={handleResetScan}
-              className="flex items-center gap-1 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/15 px-3 py-1 text-[10px] text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              className="text-[11px] gap-1 shadow-[3px_3px_0px_#1E293B]"
             >
-              <RefreshCw className="size-2.5" />
+              <RefreshCw className="size-3" strokeWidth={2.5} />
               <span>Lepas / Pindai Marker Lain</span>
-            </button>
+            </Button>
           </div>
         ) : (
           /* Helper hint when marker is not yet detected */
-          <button
-            type="button"
+          <Button
+            size="sm"
+            variant="candySecondary"
             onClick={() => setIsMarkerModalOpen(true)}
-            className="flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 px-3.5 py-1.5 text-xs text-slate-200 hover:bg-black/80 transition-colors shadow-lg cursor-pointer"
+            className="shadow-[4px_4px_0px_#1E293B] text-xs gap-2 py-2 px-4"
           >
-            <HelpCircle className="size-3.5 text-cyan-400" />
+            <Lightbulb className="size-4 text-tertiary shrink-0" strokeWidth={2.5} />
             <span>Belum punya kartu? Buka Katalog Marker</span>
-          </button>
+          </Button>
         )}
       </footer>
 
-      {/* 7. Bottom Drawer / Sheet for Formula & Characteristics */}
+      {/* 7. Bottom Drawer / Sheet for Formula & Characteristics Styled as Playful Study Card */}
       {isFormulaDrawerOpen && (
-        <div className="absolute inset-x-0 bottom-0 z-50 max-h-[75vh] overflow-y-auto rounded-t-3xl border-t border-border bg-slate-900/95 p-5 backdrop-blur-xl shadow-2xl animate-in slide-in-from-bottom duration-200">
+        <div className="absolute inset-x-0 bottom-0 z-50 max-h-[80vh] overflow-y-auto rounded-t-3xl border-t-4 border-x-4 border-border bg-[#FFFDF5] p-5 sm:p-6 shadow-[0px_-6px_0px_#1E293B] animate-in slide-in-from-bottom duration-200">
           <div className="mx-auto max-w-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <div className="flex size-8 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400">
-                  <Sparkles className="size-4" />
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b-2 border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-9 items-center justify-center rounded-xl border-2 border-border bg-accent text-white shadow-[2px_2px_0px_#1E293B]">
+                  <Sparkles className="size-5" strokeWidth={2.5} />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">
+                  <h3 className="font-heading text-lg font-black text-foreground">
                     {activeGeometry.name}
                   </h3>
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase">
                     Target Marker #{activeGeometry.targetIndex}
                   </p>
                 </div>
               </div>
 
               <Button
-                size="icon-xs"
-                variant="ghost"
+                size="icon-sm"
+                variant="candySecondary"
                 onClick={() => setIsFormulaDrawerOpen(false)}
-                className="rounded-full text-slate-400 hover:text-white"
+                aria-label="Tutup panel rumus"
               >
-                <X className="size-4" />
+                <X className="size-4" strokeWidth={2.5} />
               </Button>
             </div>
 
             {/* Formula Cards */}
-            <div className="mt-3 flex flex-col gap-2.5">
-              <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/40 p-3">
-                <span className="text-[10px] font-semibold text-indigo-300 uppercase tracking-wider">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Volume Formula */}
+              <div className="rounded-2xl border-2 border-border bg-[#EEF2FF] p-4 shadow-[4px_4px_0px_#1E293B]">
+                <Badge variant="violet" size="sm" className="mb-2 uppercase tracking-wider">
                   Rumus Volume
-                </span>
-                <p className="mt-0.5 text-lg font-mono font-bold text-white">
+                </Badge>
+                <p className="font-mono text-xl font-black text-foreground">
                   {activeGeometry.formulaVolume.formula}
                 </p>
-                <p className="mt-0.5 text-[11px] text-indigo-200/80 leading-relaxed">
+                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
                   {activeGeometry.formulaVolume.description}
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-cyan-500/30 bg-cyan-950/40 p-3">
-                <span className="text-[10px] font-semibold text-cyan-300 uppercase tracking-wider">
-                  Rumus Luas Permukaan
-                </span>
-                <p className="mt-0.5 text-lg font-mono font-bold text-white">
+              {/* Surface Area Formula */}
+              <div className="rounded-2xl border-2 border-border bg-[#ECFDF5] p-4 shadow-[4px_4px_0px_#1E293B]">
+                <Badge variant="mint" size="sm" className="mb-2 uppercase tracking-wider">
+                  Luas Permukaan
+                </Badge>
+                <p className="font-mono text-xl font-black text-foreground">
                   {activeGeometry.formulaSurface.formula}
                 </p>
-                <p className="mt-0.5 text-[11px] text-cyan-200/80 leading-relaxed">
+                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
                   {activeGeometry.formulaSurface.description}
                 </p>
               </div>
             </div>
 
-            {/* Characteristics */}
-            <div className="mt-3">
-              <h4 className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                Karakteristik & Ciri Bangun Ruang
+            {/* Characteristics List */}
+            <div className="mt-4 rounded-2xl border-2 border-border bg-white p-4 shadow-[4px_4px_0px_#1E293B]">
+              <h4 className="font-heading text-xs font-extrabold text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-secondary" />
+                <span>Karakteristik & Ciri Bangun Ruang</span>
               </h4>
-              <ul className="space-y-1 text-xs text-slate-300">
+              <ul className="space-y-1.5 text-xs text-foreground">
                 {activeGeometry.characteristics.map((c, i) => (
-                  <li key={i} className="flex items-start gap-1.5">
-                    <span className="text-cyan-400 font-bold">•</span>
-                    <span>{c}</span>
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="text-accent font-black select-none">●</span>
+                    <span className="leading-relaxed">{c}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
             {/* Variables Legend */}
-            <div className="mt-3 pt-2.5 border-t border-white/10">
-              <h4 className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+            <div className="mt-4 pt-3 border-t-2 border-border">
+              <h4 className="font-heading text-xs font-extrabold text-muted-foreground uppercase tracking-wider mb-2">
                 Keterangan Variabel
               </h4>
-              <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+              <div className="flex flex-wrap gap-2 text-xs">
                 {Object.entries(activeGeometry.variables).map(([key, val]) => (
-                  <div key={key} className="flex items-center gap-1">
-                    <span className="font-mono font-bold text-indigo-400">{key}</span>
-                    <span className="text-slate-400">=</span>
-                    <span className="text-slate-200">{val}</span>
+                  <div
+                    key={key}
+                    className="flex items-center gap-1.5 rounded-lg border-2 border-border bg-white px-2.5 py-1 shadow-[2px_2px_0px_#1E293B]"
+                  >
+                    <span className="font-mono font-bold text-accent">{key}</span>
+                    <span className="text-muted-foreground">=</span>
+                    <span className="font-semibold text-foreground">{val}</span>
                   </div>
                 ))}
               </div>
