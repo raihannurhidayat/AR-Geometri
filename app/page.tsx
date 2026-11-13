@@ -60,7 +60,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex size-10 items-center justify-center rounded-2xl border-2 border-border bg-accent text-white shadow-[3px_3px_0px_#1E293B] group-hover:-translate-y-0.5 group-hover:shadow-[4px_4px_0px_#1E293B] transition-all">
+            <div className="flex size-10 items-center justify-center rounded-2xl border-2 border-[#1E293B] bg-[#8B5CF6] text-white shadow-[3px_3px_0px_#1E293B] group-hover:-translate-y-0.5 group-hover:shadow-[4px_4px_0px_#1E293B] transition-all">
               <Box className="size-5" strokeWidth={2.5} />
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
@@ -129,7 +129,7 @@ export default function Home() {
                 {/* Main Headline */}
                 <h1 className="font-heading text-3xl sm:text-5xl lg:text-5xl font-black text-foreground tracking-tight leading-[1.15]">
                   Eksplorasi Bangun Ruang Nyata Lewat{" "}
-                  <span className="relative inline-block text-accent">
+                  <span className="relative inline-block text-[#8B5CF6]">
                     Kamera Interaktif
                     {/* Hand-drawn squiggly underline SVG */}
                     <svg
@@ -165,7 +165,7 @@ export default function Home() {
                   >
                     <Camera className="size-5" strokeWidth={2.5} />
                     <span>Mulai Pindai AR Sekarang</span>
-                    <span className="flex size-7 items-center justify-center rounded-full bg-white text-accent">
+                    <span className="flex size-7 items-center justify-center rounded-full bg-white text-[#8B5CF6]">
                       <ArrowRight className="size-4" strokeWidth={3} />
                     </span>
                   </Link>
@@ -318,13 +318,13 @@ export default function Home() {
               {/* Step 1 */}
               <div className="relative rounded-2xl border-2 border-border bg-white p-6 shadow-[6px_6px_0px_#8B5CF6] flex flex-col justify-between">
                 {/* Floating Number Badge sitting on the top border */}
-                <div className="absolute -top-5 left-6 size-10 rounded-xl border-2 border-border bg-accent text-white font-heading font-black text-base shadow-[2px_2px_0px_#1E293B] flex items-center justify-center">
+                <div className="absolute -top-5 left-6 size-10 rounded-xl border-2 border-[#1E293B] bg-[#8B5CF6] text-white font-heading font-black text-base shadow-[2px_2px_0px_#1E293B] flex items-center justify-center">
                   1
                 </div>
 
                 <div className="pt-2">
                   <div className="flex items-center gap-2 mb-2">
-                    <Layers className="size-4 text-accent" strokeWidth={2.5} />
+                    <Layers className="size-4 text-[#8B5CF6]" strokeWidth={2.5} />
                     <h3 className="font-heading text-lg font-bold text-foreground">
                       Siapkan Kartu Marker
                     </h3>
@@ -349,13 +349,13 @@ export default function Home() {
 
               {/* Step 2 */}
               <div className="relative rounded-2xl border-2 border-border bg-white p-6 shadow-[6px_6px_0px_#F472B6] flex flex-col justify-between">
-                <div className="absolute -top-5 left-6 size-10 rounded-xl border-2 border-border bg-secondary text-white font-heading font-black text-base shadow-[2px_2px_0px_#1E293B] flex items-center justify-center">
+                <div className="absolute -top-5 left-6 size-10 rounded-xl border-2 border-[#1E293B] bg-[#F472B6] text-white font-heading font-black text-base shadow-[2px_2px_0px_#1E293B] flex items-center justify-center">
                   2
                 </div>
 
                 <div className="pt-2">
                   <div className="flex items-center gap-2 mb-2">
-                    <Camera className="size-4 text-secondary" strokeWidth={2.5} />
+                    <Camera className="size-4 text-[#F472B6]" strokeWidth={2.5} />
                     <h3 className="font-heading text-lg font-bold text-foreground">
                       Izinkan Akses Kamera
                     </h3>
@@ -365,14 +365,14 @@ export default function Home() {
                   </p>
                 </div>
 
-                <div className="mt-5 pt-3 border-t-2 border-muted flex items-center text-[11px] font-bold text-secondary">
+                <div className="mt-5 pt-3 border-t-2 border-muted flex items-center text-[11px] font-bold text-[#F472B6]">
                   <span>Aman, privasi 100% lokal</span>
                 </div>
               </div>
 
               {/* Step 3 */}
               <div className="relative rounded-2xl border-2 border-border bg-white p-6 shadow-[6px_6px_0px_#34D399] flex flex-col justify-between">
-                <div className="absolute -top-5 left-6 size-10 rounded-xl border-2 border-border bg-quaternary text-foreground font-heading font-black text-base shadow-[2px_2px_0px_#1E293B] flex items-center justify-center">
+                <div className="absolute -top-5 left-6 size-10 rounded-xl border-2 border-[#1E293B] bg-[#34D399] text-[#1E293B] font-heading font-black text-base shadow-[2px_2px_0px_#1E293B] flex items-center justify-center">
                   3
                 </div>
 
@@ -525,7 +525,7 @@ export default function Home() {
       <footer className="border-t-2 border-border bg-[#FFFDF5] py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div className="flex items-center gap-2">
-            <div className="flex size-7 items-center justify-center rounded-lg border-2 border-border bg-accent text-white shadow-[2px_2px_0px_#1E293B]">
+            <div className="flex size-7 items-center justify-center rounded-lg border-2 border-[#1E293B] bg-[#8B5CF6] text-white shadow-[2px_2px_0px_#1E293B]">
               <Box className="size-4" strokeWidth={2.5} />
             </div>
             <span className="font-heading font-extrabold text-sm text-foreground">

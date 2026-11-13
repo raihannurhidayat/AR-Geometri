@@ -4,28 +4,28 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "group/badge inline-flex w-fit shrink-0 items-center justify-center gap-1.5 font-bold tracking-tight whitespace-nowrap transition-all select-none border-2 border-border shadow-[2px_2px_0px_#1E293B]",
+  "group/badge inline-flex w-fit shrink-0 items-center justify-center gap-1.5 font-bold tracking-tight whitespace-nowrap transition-all select-none border-2 border-[#1E293B] shadow-[2px_2px_0px_#1E293B]",
   {
     variants: {
       variant: {
         default:
-          "rounded-full bg-primary text-primary-foreground",
+          "rounded-full bg-[#8B5CF6] text-white",
         secondary:
-          "rounded-full bg-secondary text-white",
+          "rounded-full bg-[#F472B6] text-white",
         outline:
-          "rounded-full bg-card text-foreground",
+          "rounded-full bg-white text-[#1E293B]",
         destructive:
-          "rounded-full bg-destructive text-white",
+          "rounded-full bg-[#EF4444] text-white",
         yellow:
-          "rounded-full bg-tertiary text-foreground",
+          "rounded-full bg-[#FBBF24] text-[#1E293B]",
         mint:
-          "rounded-full bg-quaternary text-foreground",
+          "rounded-full bg-[#34D399] text-[#1E293B]",
         violet:
-          "rounded-full bg-accent text-white",
+          "rounded-full bg-[#8B5CF6] text-white",
         pink:
-          "rounded-full bg-secondary text-white",
+          "rounded-full bg-[#F472B6] text-white",
         sticker:
-          "rounded-lg bg-white text-foreground shadow-[2px_2px_0px_#1E293B] uppercase tracking-wider",
+          "rounded-lg bg-white text-[#1E293B] shadow-[2px_2px_0px_#1E293B] uppercase tracking-wider",
       },
       size: {
         default: "h-6 px-3 text-[11px]",

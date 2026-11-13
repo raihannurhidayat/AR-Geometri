@@ -712,7 +712,7 @@ export function ARScanner() {
           onClick={() => setIsSelectorOpen(true)}
           className="flex items-center gap-2 rounded-full border-2 border-border bg-white text-foreground px-3.5 py-1.5 shadow-[3px_3px_0px_#1E293B] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#1E293B] active:translate-y-0.5 transition-all cursor-pointer"
         >
-          <div className="flex size-5 items-center justify-center rounded-md bg-accent text-white font-bold text-[10px]">
+          <div className="flex size-5 items-center justify-center rounded-md bg-[#8B5CF6] text-white font-bold text-[10px]">
             #{activeGeometry.targetIndex}
           </div>
           <span className="font-heading font-extrabold text-xs sm:text-sm">
@@ -752,7 +752,7 @@ export function ARScanner() {
             className="shadow-[3px_3px_0px_#1E293B]"
             title="Lihat Gambar Pola Marker"
           >
-            <Layers className="size-4 text-accent" strokeWidth={2.5} />
+            <Layers className="size-4 text-[#8B5CF6]" strokeWidth={2.5} />
           </Button>
         </div>
       </header>
@@ -771,7 +771,7 @@ export function ARScanner() {
       {isModelVisible && (
         <div className="absolute top-24 sm:top-20 inset-x-0 z-25 flex justify-center pointer-events-none animate-in fade-in duration-300">
           <div className="flex items-center gap-2 rounded-full border-2 border-border bg-white text-foreground px-3.5 py-1 text-[11px] font-bold shadow-[3px_3px_0px_#1E293B]">
-            <Move className="size-3.5 text-accent" strokeWidth={2.5} />
+            <Move className="size-3.5 text-[#8B5CF6]" strokeWidth={2.5} />
             <span>Geser 1 jari untuk memutar • Cubit untuk zoom</span>
           </div>
         </div>
@@ -941,7 +941,7 @@ export function ARScanner() {
             {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b-2 border-border">
               <div className="flex items-center gap-2.5">
-                <div className="flex size-9 items-center justify-center rounded-xl border-2 border-border bg-accent text-white shadow-[2px_2px_0px_#1E293B]">
+                <div className="flex size-9 items-center justify-center rounded-xl border-2 border-border bg-[#8B5CF6] text-white shadow-[2px_2px_0px_#1E293B]">
                   <Sparkles className="size-5" strokeWidth={2.5} />
                 </div>
                 <div>
@@ -996,13 +996,13 @@ export function ARScanner() {
             {/* Characteristics List */}
             <div className="mt-4 rounded-2xl border-2 border-border bg-white p-4 shadow-[4px_4px_0px_#1E293B]">
               <h4 className="font-heading text-xs font-extrabold text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-secondary" />
+                <span className="size-2 rounded-full bg-[#F472B6]" />
                 <span>Karakteristik & Ciri Bangun Ruang</span>
               </h4>
               <ul className="space-y-1.5 text-xs text-foreground">
                 {activeGeometry.characteristics.map((c, i) => (
                   <li key={i} className="flex items-start gap-2">
-                    <span className="text-accent font-black select-none">●</span>
+                    <span className="text-[#8B5CF6] font-black select-none">●</span>
                     <span className="leading-relaxed">{c}</span>
                   </li>
                 ))}
@@ -1020,7 +1020,7 @@ export function ARScanner() {
                     key={key}
                     className="flex items-center gap-1.5 rounded-lg border-2 border-border bg-white px-2.5 py-1 shadow-[2px_2px_0px_#1E293B]"
                   >
-                    <span className="font-mono font-bold text-accent">{key}</span>
+                    <span className="font-mono font-bold text-[#8B5CF6]">{key}</span>
                     <span className="text-muted-foreground">=</span>
                     <span className="font-semibold text-foreground">{val}</span>
                   </div>
@@ -1063,7 +1063,7 @@ export function ARScanner() {
                   className={cn(
                     "flex items-center gap-3 rounded-2xl border-2 border-border p-3 text-left transition-all cursor-pointer",
                     isSelected
-                      ? "bg-accent/15 border-accent shadow-[3px_3px_0px_#8B5CF6]"
+                      ? "bg-[#8B5CF6]/15 border-[#8B5CF6] shadow-[3px_3px_0px_#8B5CF6]"
                       : "bg-white hover:bg-muted shadow-[2px_2px_0px_#1E293B]"
                   )}
                 >
@@ -1086,10 +1086,10 @@ export function ARScanner() {
                         {g.name}
                       </h4>
                       {isSelected && (
-                        <Check className="size-4 text-accent shrink-0" strokeWidth={3} />
+                        <Check className="size-4 text-[#8B5CF6] shrink-0" strokeWidth={3} />
                       )}
                     </div>
-                    <p className="text-[10px] font-mono text-accent truncate mt-0.5">
+                    <p className="text-[10px] font-mono text-[#8B5CF6] truncate mt-0.5">
                       {g.formulaVolume.formula}
                     </p>
                   </div>
