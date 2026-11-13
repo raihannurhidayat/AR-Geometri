@@ -38,7 +38,7 @@ function DialogContent({
       <DialogBackdrop />
       <DialogPrimitive.Popup
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 flex w-[calc(100vw-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col rounded-3xl border-2 border-border bg-[#FFFDF5] p-6 shadow-[8px_8px_0px_#1E293B] transition-[scale,opacity] duration-200 ease-out data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0 focus:outline-none max-h-[88vh] overflow-y-auto",
+          "fixed top-1/2 left-1/2 z-50 flex w-[calc(100vw-1.5rem)] sm:w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col rounded-2xl sm:rounded-3xl border-2 border-border bg-[#FFFDF5] p-4 sm:p-6 shadow-[4px_4px_0px_#1E293B] sm:shadow-[8px_8px_0px_#1E293B] transition-[scale,opacity] duration-200 ease-out data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0 focus:outline-none max-h-[88vh] overflow-y-auto",
           className
         )}
         {...props}
@@ -46,10 +46,10 @@ function DialogContent({
         {children}
         {showCloseButton && (
           <DialogPrimitive.Close
-            className="absolute top-4 right-4 inline-flex size-9 items-center justify-center rounded-full border-2 border-border bg-white text-foreground shadow-[2px_2px_0px_#1E293B] hover:bg-tertiary hover:scale-105 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 inline-flex size-8 sm:size-9 items-center justify-center rounded-full border-2 border-border bg-white text-foreground shadow-[2px_2px_0px_#1E293B] hover:bg-tertiary hover:scale-105 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
             aria-label="Tutup dialog"
           >
-            <X className="size-4" />
+            <X className="size-3.5 sm:size-4" />
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Popup>
