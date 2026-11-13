@@ -52,8 +52,35 @@ export function ARScanner() {
   const [isMarkerDetected, setIsMarkerDetected] = React.useState<boolean>(false);
   const [isScanning, setIsScanning] = React.useState<boolean>(false);
   const [isAutoRotate, setIsAutoRotate] = React.useState<boolean>(true);
+  const isAutoRotateRef = React.useRef<boolean>(true);
+
+  React.useEffect(() => {
+    isAutoRotateRef.current = isAutoRotate;
+  }, [isAutoRotate]);
+
+  const disableAutoRotate = React.useCallback(() => {
+    if (isAutoRotateRef.current) {
+      isAutoRotateRef.current = false;
+      setIsAutoRotate(false);
+    }
+  }, []);
+
+  const toggleAutoRotate = React.useCallback(() => {
+    setIsAutoRotate((prev) => {
+      const next = !prev;
+      isAutoRotateRef.current = next;
+      return next;
+    });
+  }, []);
+
   const [isFormulaDrawerOpen, setIsFormulaDrawerOpen] = React.useState<boolean>(false);
   const [scaleFactor, setScaleFactor] = React.useState<number>(1);
+  const scaleFactorRef = React.useRef<number>(1);
+
+  React.useEffect(() => {
+    scaleFactorRef.current = scaleFactor;
+  }, [scaleFactor]);
+
   const [isMarkerModalOpen, setIsMarkerModalOpen] = React.useState<boolean>(false);
 
   // 1. Camera Lifecycle & Initialization
@@ -149,6 +176,8 @@ export function ARScanner() {
     setStatus("scanning");
     setIsFormulaDrawerOpen(false);
     setScaleFactor(1);
+    setIsAutoRotate(true);
+    isAutoRotateRef.current = true;
     if (threeRef.current?.activeMeshGroup) {
       threeRef.current.activeMeshGroup.rotation.set(0, 0, 0);
       threeRef.current.activeMeshGroup.scale.set(1, 1, 1);
@@ -266,7 +295,7 @@ export function ARScanner() {
     // Render loop
     const animate = () => {
       if (threeRef.current) {
-        if (isAutoRotate && threeRef.current.activeMeshGroup && threeRef.current.activeMeshGroup.visible) {
+        if (isAutoRotateRef.current && threeRef.current.activeMeshGroup && threeRef.current.activeMeshGroup.visible) {
           threeRef.current.activeMeshGroup.rotation.y += 0.01;
         }
         threeRef.current.renderer.render(threeRef.current.scene, threeRef.current.camera);
@@ -293,7 +322,7 @@ export function ARScanner() {
         threeRef.current.renderer.dispose();
       }
     };
-  }, [isAutoRotate]);
+  }, []);
 
   // 5. Update 3D Model: only render when isMarkerDetected is true
   React.useEffect(() => {
@@ -307,12 +336,23 @@ export function ARScanner() {
     if (isMarkerDetected) {
       const newMesh = create3DMeshForGeometry(activeGeometry.id);
       activeMeshGroup.add(newMesh);
-      activeMeshGroup.scale.set(scaleFactor, scaleFactor, scaleFactor);
+      activeMeshGroup.scale.set(
+        scaleFactorRef.current,
+        scaleFactorRef.current,
+        scaleFactorRef.current
+      );
       activeMeshGroup.visible = true;
     } else {
       activeMeshGroup.visible = false;
     }
-  }, [activeGeometry, isMarkerDetected, create3DMeshForGeometry, scaleFactor]);
+  }, [activeGeometry, isMarkerDetected, create3DMeshForGeometry]);
+
+  // Sync scale factor directly to Three.js activeMeshGroup without rebuilding mesh
+  React.useEffect(() => {
+    if (threeRef.current?.activeMeshGroup) {
+      threeRef.current.activeMeshGroup.scale.set(scaleFactor, scaleFactor, scaleFactor);
+    }
+  }, [scaleFactor]);
 
   // 6. Camera Lifecycle on mount/unmount
   React.useEffect(() => {
@@ -335,13 +375,15 @@ export function ARScanner() {
 
     // A. Mouse Pointer Drag (Desktop)
     const onPointerDown = (e: PointerEvent) => {
-      if (e.pointerType === "mouse" && e.button !== 0) return;
+      if (e.pointerType === "touch") return; // Touch events handled by onTouchStart
+      if (e.button !== 0) return;
       isPointerDownRef.current = true;
       lastPointerPosRef.current = { x: e.clientX, y: e.clientY };
-      setIsAutoRotate(false);
+      disableAutoRotate();
     };
 
     const onPointerMove = (e: PointerEvent) => {
+      if (e.pointerType === "touch") return;
       if (!isPointerDownRef.current || !threeRef.current) return;
       const dx = e.clientX - lastPointerPosRef.current.x;
       const dy = e.clientY - lastPointerPosRef.current.y;
@@ -354,13 +396,15 @@ export function ARScanner() {
       }
     };
 
-    const onPointerUp = () => {
+    const onPointerUp = (e: PointerEvent) => {
+      if (e.pointerType === "touch") return;
       isPointerDownRef.current = false;
     };
 
     // B. Mouse Wheel Zoom (Desktop)
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      disableAutoRotate();
       const zoomStep = e.deltaY < 0 ? 0.1 : -0.1;
       setScaleFactor((prev) => {
         const next = Math.min(Math.max(prev + zoomStep, 0.4), 3.0);
@@ -373,10 +417,10 @@ export function ARScanner() {
 
     // C. Touch Drag (1-finger rotate) & Pinch (2-finger zoom) on Mobile
     const onTouchStart = (e: TouchEvent) => {
+      disableAutoRotate();
       if (e.touches.length === 1) {
         isPointerDownRef.current = true;
         lastPointerPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        setIsAutoRotate(false);
       } else if (e.touches.length === 2) {
         isPointerDownRef.current = false;
         const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -447,7 +491,7 @@ export function ARScanner() {
       container.removeEventListener("touchend", onTouchEnd);
       container.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [isMarkerDetected]);
+  }, [isMarkerDetected, disableAutoRotate]);
 
   // Button Actions
   const handleZoom = (delta: number) => {
@@ -462,6 +506,8 @@ export function ARScanner() {
 
   const handleReset = () => {
     setScaleFactor(1);
+    setIsAutoRotate(true);
+    isAutoRotateRef.current = true;
     if (threeRef.current?.activeMeshGroup) {
       threeRef.current.activeMeshGroup.scale.set(1, 1, 1);
       threeRef.current.activeMeshGroup.rotation.set(0, 0, 0);
@@ -692,7 +738,7 @@ export function ARScanner() {
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => setIsAutoRotate(!isAutoRotate)}
+                onClick={toggleAutoRotate}
                 className={`rounded-full h-7 px-2.5 text-[11px] gap-1 ${
                   isAutoRotate ? "bg-cyan-500/20 text-cyan-300" : "text-white/80"
                 }`}
