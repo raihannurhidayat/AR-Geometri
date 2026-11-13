@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import * as THREE from "three";
 import {
   ArrowLeft,
@@ -10,7 +11,6 @@ import {
   ZoomOut,
   RotateCcw,
   BookOpen,
-  HelpCircle,
   CameraOff,
   Sparkles,
   ChevronDown,
@@ -20,9 +20,20 @@ import {
   CheckCircle2,
   Move,
   Lightbulb,
+  Gamepad2,
+  Layers,
+  Shapes,
+  Check,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { GEOMETRIES } from "@/features/geometry/data/geometries";
 import { GeometryItem, ScannerStatus } from "@/features/geometry/types/geometry";
@@ -56,6 +67,12 @@ export function ARScanner() {
   const [isAutoRotate, setIsAutoRotate] = React.useState<boolean>(true);
   const isAutoRotateRef = React.useRef<boolean>(true);
 
+  // Simulation mode: allows exploring 3D geometry directly without physical marker or camera
+  const [isSimulationMode, setIsSimulationMode] = React.useState<boolean>(false);
+
+  // Visual Geometry Switcher Modal
+  const [isSelectorOpen, setIsSelectorOpen] = React.useState<boolean>(false);
+
   React.useEffect(() => {
     isAutoRotateRef.current = isAutoRotate;
   }, [isAutoRotate]);
@@ -87,11 +104,13 @@ export function ARScanner() {
 
   // 1. Camera Lifecycle & Initialization
   const requestCameraStream = React.useCallback(async (isMounted: () => boolean) => {
+    if (isSimulationMode) return;
+
     if (typeof window !== "undefined" && !window.isSecureContext && window.location.hostname !== "localhost") {
       if (isMounted()) {
         setStatus("error");
         setErrorMessage("Koneksi Tidak Aman (Insecure HTTP)");
-        setErrorHelpTip("Akses kamera pada browser mewajibkan koneksi HTTPS atau domain localhost.");
+        setErrorHelpTip("Akses kamera browser memerlukan koneksi HTTPS atau domain localhost.");
       }
       return;
     }
@@ -136,7 +155,7 @@ export function ARScanner() {
       const errorObj = err as { name?: string; message?: string };
       if (errorObj.name === "NotAllowedError" || errorObj.name === "PermissionDeniedError") {
         setErrorMessage("Izin Akses Kamera Ditolak");
-        setErrorHelpTip("Silakan klik ikon gembok di sebelah bilah alamat URL browser Anda, aktifkan izin Kamera, lalu muat ulang halaman ini.");
+        setErrorHelpTip("Klik ikon perizinan di bilah alamat browser Anda, aktifkan izin Kamera, lalu muat ulang halaman.");
       } else if (errorObj.name === "NotFoundError" || errorObj.name === "DevicesNotFoundError") {
         setErrorMessage("Kamera Tidak Ditemukan");
         setErrorHelpTip("Perangkat Anda tidak memiliki modul kamera yang aktif atau sedang digunakan aplikasi lain.");
@@ -145,9 +164,10 @@ export function ARScanner() {
         setErrorHelpTip(errorObj.message || "Terjadi kendala saat menghubungkan kamera perangkat.");
       }
     }
-  }, []);
+  }, [isSimulationMode]);
 
   const handleRetryCamera = React.useCallback(() => {
+    setIsSimulationMode(false);
     setStatus("requesting_permission");
     setErrorMessage(null);
     setErrorHelpTip(null);
@@ -161,6 +181,19 @@ export function ARScanner() {
     }
   }, []);
 
+  const handleEnableSimulation = () => {
+    stopCamera();
+    setIsSimulationMode(true);
+    setStatus("detected");
+    setIsMarkerDetected(true);
+  };
+
+  const handleDisableSimulation = () => {
+    setIsSimulationMode(false);
+    setIsMarkerDetected(false);
+    handleRetryCamera();
+  };
+
   // 2. Scan Marker Action
   const handleScanMarker = () => {
     if (isScanning) return;
@@ -170,10 +203,14 @@ export function ARScanner() {
       setIsScanning(false);
       setIsMarkerDetected(true);
       setStatus("detected");
-    }, 500);
+    }, 450);
   };
 
   const handleResetScan = () => {
+    if (isSimulationMode) {
+      handleDisableSimulation();
+      return;
+    }
     setIsMarkerDetected(false);
     setStatus("scanning");
     setIsFormulaDrawerOpen(false);
@@ -192,12 +229,12 @@ export function ARScanner() {
 
     const mainMaterial = new THREE.MeshPhysicalMaterial({
       color: 0x8b5cf6,
-      metalness: 0.1,
-      roughness: 0.25,
-      transmission: 0.25,
+      metalness: 0.12,
+      roughness: 0.22,
+      transmission: 0.2,
       transparent: true,
       opacity: 0.94,
-      clearcoat: 0.6,
+      clearcoat: 0.7,
       clearcoatRoughness: 0.1,
     });
 
@@ -210,31 +247,31 @@ export function ARScanner() {
 
     switch (geomId) {
       case "cube":
-        geometry = new THREE.BoxGeometry(2, 2, 2);
+        geometry = new THREE.BoxGeometry(2.1, 2.1, 2.1);
         mainMaterial.color.setHex(0x8b5cf6); // Vivid Violet
         break;
       case "cuboid":
-        geometry = new THREE.BoxGeometry(2.8, 1.6, 1.8);
+        geometry = new THREE.BoxGeometry(2.8, 1.7, 1.9);
         mainMaterial.color.setHex(0x06b6d4); // Cyan
         break;
       case "prism":
-        geometry = new THREE.CylinderGeometry(1.6, 1.6, 2.4, 3);
+        geometry = new THREE.CylinderGeometry(1.6, 1.6, 2.5, 3);
         mainMaterial.color.setHex(0x34d399); // Mint / Emerald
         break;
       case "pyramid":
-        geometry = new THREE.ConeGeometry(1.8, 2.4, 4);
+        geometry = new THREE.ConeGeometry(1.9, 2.5, 4);
         mainMaterial.color.setHex(0xfbbf24); // Amber / Yellow
         break;
       case "cylinder":
-        geometry = new THREE.CylinderGeometry(1.2, 1.2, 2.5, 32);
+        geometry = new THREE.CylinderGeometry(1.25, 1.25, 2.6, 32);
         mainMaterial.color.setHex(0xf472b6); // Hot Pink
         break;
       case "cone":
-        geometry = new THREE.ConeGeometry(1.5, 2.6, 32);
+        geometry = new THREE.ConeGeometry(1.6, 2.7, 32);
         mainMaterial.color.setHex(0xf43f5e); // Rose
         break;
       case "sphere":
-        geometry = new THREE.SphereGeometry(1.4, 32, 24);
+        geometry = new THREE.SphereGeometry(1.45, 32, 24);
         mainMaterial.color.setHex(0x3b82f6); // Sky Blue
         break;
       default:
@@ -326,7 +363,7 @@ export function ARScanner() {
     };
   }, []);
 
-  // 5. Update 3D Model: only render when isMarkerDetected is true
+  // 5. Update 3D Model: render when marker is detected or in simulation mode
   React.useEffect(() => {
     if (!threeRef.current) return;
     const { activeMeshGroup } = threeRef.current;
@@ -335,7 +372,7 @@ export function ARScanner() {
       activeMeshGroup.remove(activeMeshGroup.children[0]);
     }
 
-    if (isMarkerDetected) {
+    if (isMarkerDetected || isSimulationMode) {
       const newMesh = create3DMeshForGeometry(activeGeometry.id);
       activeMeshGroup.add(newMesh);
       activeMeshGroup.scale.set(
@@ -347,7 +384,7 @@ export function ARScanner() {
     } else {
       activeMeshGroup.visible = false;
     }
-  }, [activeGeometry, isMarkerDetected, create3DMeshForGeometry]);
+  }, [activeGeometry, isMarkerDetected, isSimulationMode, create3DMeshForGeometry]);
 
   // Sync scale factor directly to Three.js activeMeshGroup without rebuilding mesh
   React.useEffect(() => {
@@ -373,7 +410,7 @@ export function ARScanner() {
   // 7. Interactive Gesture Listeners (Mouse Drag & Scroll + Touch Drag & Pinch-to-Zoom)
   React.useEffect(() => {
     const container = canvasContainerRef.current;
-    if (!container || !isMarkerDetected) return;
+    if (!container || (!isMarkerDetected && !isSimulationMode)) return;
 
     // Mouse Pointer Drag (Desktop)
     const onPointerDown = (e: PointerEvent) => {
@@ -493,7 +530,7 @@ export function ARScanner() {
       container.removeEventListener("touchend", onTouchEnd);
       container.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [isMarkerDetected, disableAutoRotate]);
+  }, [isMarkerDetected, isSimulationMode, disableAutoRotate]);
 
   // Button Actions
   const handleZoom = (delta: number) => {
@@ -516,124 +553,143 @@ export function ARScanner() {
     }
   };
 
+  const isModelVisible = isMarkerDetected || isSimulationMode;
+
   return (
     <div className="relative h-screen w-full overflow-hidden bg-slate-950 text-foreground select-none">
-      {/* 1. Live Background Video Stream */}
-      <video
-        ref={videoRef}
-        playsInline
-        autoPlay
-        muted
-        className="absolute inset-0 h-full w-full object-cover z-0"
-      />
-
-      {/* Subtle overlay shading for HUD readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60 pointer-events-none z-10" />
+      {/* 1. Live Background Video Stream (or Simulation Geometric Backdrop) */}
+      {!isSimulationMode ? (
+        <>
+          <video
+            ref={videoRef}
+            playsInline
+            autoPlay
+            muted
+            className="absolute inset-0 h-full w-full object-cover z-0"
+          />
+          {/* Subtle overlay shading for HUD readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/65 pointer-events-none z-10" />
+        </>
+      ) : (
+        /* Playful Studio Backdrop for Simulation Mode */
+        <div className="absolute inset-0 bg-[#FFFDF5] bg-dot-pattern z-0 flex items-center justify-center overflow-hidden">
+          {/* Big yellow circle & Memphis shapes */}
+          <div className="absolute size-96 rounded-full bg-[#FBBF24]/30 border-2 border-border blur-xs -top-20 -right-20 pointer-events-none" />
+          <div className="absolute size-80 rounded-full bg-[#F472B6]/20 border-2 border-border -bottom-20 -left-20 pointer-events-none" />
+          <div className="absolute text-center pointer-events-none opacity-20 text-foreground select-none">
+            <span className="font-heading font-black text-6xl tracking-widest uppercase">
+              {activeGeometry.name} 3D
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* 2. Interactive Three.js 3D Virtual Canvas (Mouse drag/scroll & Touch drag/pinch) */}
       <div
         ref={canvasContainerRef}
         className={cn(
           "absolute inset-0 h-full w-full z-20",
-          isMarkerDetected
+          isModelVisible
             ? "pointer-events-auto touch-none cursor-grab active:cursor-grabbing"
             : "pointer-events-none"
         )}
       />
 
-      {/* 3. Scanning Reticle (Center Viewfinder) with Playful Geometric Pop Style */}
-      <div className="absolute inset-0 z-15 flex flex-col items-center justify-center pointer-events-none px-4">
-        <div
-          className={cn(
-            "relative size-60 sm:size-64 rounded-3xl flex flex-col items-center justify-center transition-all duration-300",
-            isMarkerDetected
-              ? "border-3 border-quaternary bg-quaternary/10 shadow-[0_0_24px_rgba(52,211,153,0.35)]"
-              : "border-3 border-dashed border-white/60 bg-black/15"
-          )}
-        >
-          {/* Animated Scanning Laser Line (only when searching) */}
-          {status !== "error" && !isMarkerDetected && (
-            <div className="absolute inset-x-2 h-1 bg-gradient-to-r from-transparent via-[#FBBF24] to-transparent shadow-[0_0_12px_#FBBF24] animate-pulse top-1/2 -translate-y-1/2" />
-          )}
+      {/* 3. Scanning Reticle (Center Viewfinder) - Only shown in Camera Mode when searching */}
+      {!isSimulationMode && (
+        <div className="absolute inset-0 z-15 flex flex-col items-center justify-center pointer-events-none px-4">
+          <div
+            className={cn(
+              "relative size-60 sm:size-64 rounded-3xl flex flex-col items-center justify-center transition-all duration-300",
+              isMarkerDetected
+                ? "border-3 border-quaternary bg-quaternary/10 shadow-[0_0_24px_rgba(52,211,153,0.35)]"
+                : "border-3 border-dashed border-white/60 bg-black/20"
+            )}
+          >
+            {/* Animated Scanning Laser Line */}
+            {status !== "error" && !isMarkerDetected && (
+              <div className="absolute inset-x-2 h-1 bg-gradient-to-r from-transparent via-[#FBBF24] to-transparent shadow-[0_0_12px_#FBBF24] animate-pulse top-1/2 -translate-y-1/2" />
+            )}
 
-          {/* Chunky Corner Brackets */}
-          <div
-            className={cn(
-              "absolute -top-2 -left-2 size-6 border-t-4 border-l-4 rounded-tl-xl transition-colors",
-              isMarkerDetected ? "border-quaternary" : "border-tertiary"
-            )}
-          />
-          <div
-            className={cn(
-              "absolute -top-2 -right-2 size-6 border-t-4 border-r-4 rounded-tr-xl transition-colors",
-              isMarkerDetected ? "border-quaternary" : "border-tertiary"
-            )}
-          />
-          <div
-            className={cn(
-              "absolute -bottom-2 -left-2 size-6 border-b-4 border-l-4 rounded-bl-xl transition-colors",
-              isMarkerDetected ? "border-quaternary" : "border-tertiary"
-            )}
-          />
-          <div
-            className={cn(
-              "absolute -bottom-2 -right-2 size-6 border-b-4 border-r-4 rounded-br-xl transition-colors",
-              isMarkerDetected ? "border-quaternary" : "border-tertiary"
-            )}
-          />
+            {/* Chunky Corner Brackets with Hard Contrast */}
+            <div
+              className={cn(
+                "absolute -top-2 -left-2 size-6 border-t-4 border-l-4 rounded-tl-xl transition-colors",
+                isMarkerDetected ? "border-quaternary" : "border-tertiary"
+              )}
+            />
+            <div
+              className={cn(
+                "absolute -top-2 -right-2 size-6 border-t-4 border-r-4 rounded-tr-xl transition-colors",
+                isMarkerDetected ? "border-quaternary" : "border-tertiary"
+              )}
+            />
+            <div
+              className={cn(
+                "absolute -bottom-2 -left-2 size-6 border-b-4 border-l-4 rounded-bl-xl transition-colors",
+                isMarkerDetected ? "border-quaternary" : "border-tertiary"
+              )}
+            />
+            <div
+              className={cn(
+                "absolute -bottom-2 -right-2 size-6 border-b-4 border-r-4 rounded-br-xl transition-colors",
+                isMarkerDetected ? "border-quaternary" : "border-tertiary"
+              )}
+            />
 
-          {/* Center Scan Candy Button (When marker is not yet detected) */}
-          {!isMarkerDetected && status !== "error" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-              <Button
-                variant="candyYellow"
-                size="lg"
-                onClick={handleScanMarker}
-                disabled={isScanning}
-                className="pointer-events-auto shadow-[4px_4px_0px_#1E293B] gap-2 h-11 px-5 text-xs sm:text-sm font-extrabold"
+            {/* Center Scan Candy Button */}
+            {!isMarkerDetected && status !== "error" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                <Button
+                  variant="candyYellow"
+                  size="lg"
+                  onClick={handleScanMarker}
+                  disabled={isScanning}
+                  className="pointer-events-auto shadow-[4px_4px_0px_#1E293B] gap-2 h-11 px-5 text-xs sm:text-sm font-extrabold"
+                >
+                  {isScanning ? (
+                    <>
+                      <RefreshCw className="size-4 animate-spin text-foreground" strokeWidth={2.5} />
+                      <span>Mendeteksi...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Scan className="size-4.5 text-foreground" strokeWidth={2.5} />
+                      <span>Pindai Marker</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {/* Instruction Label under reticle as a Playful Sticker Pill */}
+            <div className="absolute -bottom-16 text-center px-2 w-full">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full border-2 border-border px-4 py-1.5 text-xs font-bold shadow-[3px_3px_0px_#1E293B] transition-all",
+                  isMarkerDetected
+                    ? "bg-quaternary text-foreground"
+                    : "bg-white text-foreground"
+                )}
               >
-                {isScanning ? (
+                {isMarkerDetected ? (
                   <>
-                    <RefreshCw className="size-4 animate-spin text-foreground" strokeWidth={2.5} />
-                    <span>Menganalisis...</span>
+                    <CheckCircle2 className="size-4 text-foreground" strokeWidth={3} />
+                    <span>{activeGeometry.name} Terdeteksi! 🎉</span>
+                  </>
+                ) : isScanning ? (
+                  <>
+                    <RefreshCw className="size-3.5 animate-spin text-accent" strokeWidth={2.5} />
+                    <span>Menganalisis pola kartu marker...</span>
                   </>
                 ) : (
-                  <>
-                    <Scan className="size-4.5 text-foreground" strokeWidth={2.5} />
-                    <span>Pindai Marker</span>
-                  </>
+                  <span>Arahkan ke kartu {activeGeometry.name} lalu klik Pindai 🔍</span>
                 )}
-              </Button>
+              </span>
             </div>
-          )}
-
-          {/* Instruction Label under reticle as a Playful Sticker Pill */}
-          <div className="absolute -bottom-16 text-center px-2 w-full">
-            <span
-              className={cn(
-                "inline-flex items-center gap-2 rounded-full border-2 border-border px-4 py-1.5 text-xs font-bold shadow-[3px_3px_0px_#1E293B] transition-all",
-                isMarkerDetected
-                  ? "bg-quaternary text-foreground"
-                  : "bg-white text-foreground"
-              )}
-            >
-              {isMarkerDetected ? (
-                <>
-                  <CheckCircle2 className="size-4 text-foreground" strokeWidth={3} />
-                  <span>{activeGeometry.name} Terdeteksi! 🎉</span>
-                </>
-              ) : isScanning ? (
-                <>
-                  <RefreshCw className="size-3.5 animate-spin text-accent" strokeWidth={2.5} />
-                  <span>Menganalisis pola kartu marker...</span>
-                </>
-              ) : (
-                <span>Arahkan ke kartu marker lalu klik Pindai 🔍</span>
-              )}
-            </span>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 4. Top Floating Header HUD */}
       <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between p-3 sm:p-4">
@@ -650,57 +706,79 @@ export function ARScanner() {
           <span>Beranda</span>
         </Link>
 
-        {/* Marker Switcher & Quick Help */}
-        <div className="flex items-center gap-2">
-          {/* Target Selector in Sticker Pill Style */}
-          <div className="relative">
-            <select
-              aria-label="Pilih Model Bangun Ruang"
-              value={activeGeometry.id}
-              onChange={(e) => {
-                const found = GEOMETRIES.find((g) => g.id === e.target.value);
-                if (found) {
-                  setActiveGeometry(found);
-                }
-              }}
-              className="appearance-none rounded-full border-2 border-border bg-white text-foreground font-heading font-bold shadow-[3px_3px_0px_#1E293B] px-3.5 py-1.5 pr-8 text-xs focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
-            >
-              {GEOMETRIES.map((g) => (
-                <option key={g.id} value={g.id} className="bg-white text-foreground font-sans">
-                  {g.name} (#{g.targetIndex})
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-foreground">
-              <ChevronDown className="size-3.5" strokeWidth={2.5} />
-            </div>
+        {/* Center: Visual Geometry Picker Button */}
+        <button
+          type="button"
+          onClick={() => setIsSelectorOpen(true)}
+          className="flex items-center gap-2 rounded-full border-2 border-border bg-white text-foreground px-3.5 py-1.5 shadow-[3px_3px_0px_#1E293B] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#1E293B] active:translate-y-0.5 transition-all cursor-pointer"
+        >
+          <div className="flex size-5 items-center justify-center rounded-md bg-accent text-white font-bold text-[10px]">
+            #{activeGeometry.targetIndex}
           </div>
+          <span className="font-heading font-extrabold text-xs sm:text-sm">
+            {activeGeometry.name}
+          </span>
+          <ChevronDown className="size-3 text-muted-foreground ml-0.5" strokeWidth={2.5} />
+        </button>
 
-          {/* Help Button */}
+        {/* Right Action Stack: Mode Toggle & Catalog Button */}
+        <div className="flex items-center gap-2">
+          {/* Toggle Simulation Mode vs Camera */}
+          <Button
+            size="sm"
+            variant={isSimulationMode ? "candyMint" : "candyYellow"}
+            onClick={isSimulationMode ? handleDisableSimulation : handleEnableSimulation}
+            className="shadow-[3px_3px_0px_#1E293B] gap-1.5 text-xs font-bold hidden sm:inline-flex"
+            title={isSimulationMode ? "Kembali ke Kamera WebAR" : "Mode Simulasi 3D"}
+          >
+            {isSimulationMode ? (
+              <>
+                <Scan className="size-3.5" strokeWidth={2.5} />
+                <span>Kamera</span>
+              </>
+            ) : (
+              <>
+                <Gamepad2 className="size-3.5" strokeWidth={2.5} />
+                <span>Simulasi</span>
+              </>
+            )}
+          </Button>
+
+          {/* Marker Catalog Dialog Button */}
           <Button
             size="icon-sm"
-            variant="candyYellow"
+            variant="candySecondary"
             onClick={() => setIsMarkerModalOpen(true)}
             className="shadow-[3px_3px_0px_#1E293B]"
-            title="Lihat Gambar Marker"
+            title="Lihat Gambar Pola Marker"
           >
-            <HelpCircle className="size-4.5" strokeWidth={2.5} />
+            <Layers className="size-4 text-accent" strokeWidth={2.5} />
           </Button>
         </div>
       </header>
 
-      {/* Gesture Hint Badge (Appears when marker is detected) */}
-      {isMarkerDetected && (
-        <div className="absolute top-16 sm:top-18 inset-x-0 z-25 flex justify-center pointer-events-none animate-in fade-in duration-300">
+      {/* Floating Mode Badge (Indicates Simulation Mode) */}
+      {isSimulationMode && (
+        <div className="absolute top-16 inset-x-0 z-25 flex justify-center pointer-events-none animate-in fade-in duration-200">
+          <Badge variant="mint" size="default" className="shadow-[2px_2px_0px_#1E293B] gap-1.5">
+            <Gamepad2 className="size-3" strokeWidth={2.5} />
+            <span>Mode Simulasi 3D Aktif</span>
+          </Badge>
+        </div>
+      )}
+
+      {/* Gesture Hint Badge (Appears when 3D model is active) */}
+      {isModelVisible && (
+        <div className="absolute top-24 sm:top-20 inset-x-0 z-25 flex justify-center pointer-events-none animate-in fade-in duration-300">
           <div className="flex items-center gap-2 rounded-full border-2 border-border bg-white text-foreground px-3.5 py-1 text-[11px] font-bold shadow-[3px_3px_0px_#1E293B]">
             <Move className="size-3.5 text-accent" strokeWidth={2.5} />
-            <span>Sentuh untuk memutar • Cubit untuk zoom</span>
+            <span>Geser 1 jari untuk memutar • Cubit untuk zoom</span>
           </div>
         </div>
       )}
 
       {/* 5. Error Overlay (if camera fails or denied) */}
-      {status === "error" && (
+      {status === "error" && !isSimulationMode && (
         <div className="absolute inset-0 z-40 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md">
           <div className="max-w-md w-full rounded-3xl border-3 border-border bg-[#FFFDF5] p-6 text-center shadow-[8px_8px_0px_#1E293B]">
             <div className="mx-auto flex size-16 items-center justify-center rounded-2xl border-2 border-border bg-destructive text-white shadow-[4px_4px_0px_#1E293B] mb-4">
@@ -722,11 +800,22 @@ export function ARScanner() {
               >
                 Coba Buka Kamera Lagi
               </Button>
+
+              <Button
+                variant="candyYellow"
+                size="lg"
+                onClick={handleEnableSimulation}
+                className="w-full h-12 text-sm gap-2"
+              >
+                <Gamepad2 className="size-4" strokeWidth={2.5} />
+                <span>Gunakan Mode Simulasi 3D</span>
+              </Button>
+
               <Link
                 href="/"
                 className={cn(
                   buttonVariants({ variant: "candySecondary", size: "lg" }),
-                  "w-full h-12 text-sm flex items-center justify-center"
+                  "w-full h-11 text-xs flex items-center justify-center"
                 )}
               >
                 Kembali ke Beranda
@@ -738,8 +827,8 @@ export function ARScanner() {
 
       {/* 6. Bottom Floating Action Bar HUD */}
       <footer className="absolute bottom-5 inset-x-0 z-30 flex flex-col items-center gap-2.5 px-3">
-        {isMarkerDetected ? (
-          /* Controls Active when Marker is Detected - Playful Floating Dock */
+        {isModelVisible ? (
+          /* Controls Active when Model is Visible - Playful Floating Dock */
           <div className="flex flex-col items-center gap-2 animate-in fade-in slide-in-from-bottom duration-200">
             <div className="flex items-center gap-2 rounded-full border-2 border-border bg-white p-1.5 shadow-[6px_6px_0px_#1E293B]">
               <Button
@@ -796,28 +885,52 @@ export function ARScanner() {
               </Button>
             </div>
 
-            {/* Quick Button to Reset / Scan Other Marker */}
-            <Button
-              size="xs"
-              variant="candySecondary"
-              onClick={handleResetScan}
-              className="text-[11px] gap-1 shadow-[3px_3px_0px_#1E293B]"
-            >
-              <RefreshCw className="size-3" strokeWidth={2.5} />
-              <span>Lepas / Pindai Marker Lain</span>
-            </Button>
+            {/* Quick Button to Reset / Switch Mode */}
+            <div className="flex items-center gap-2">
+              <Button
+                size="xs"
+                variant="candySecondary"
+                onClick={handleResetScan}
+                className="text-[11px] gap-1 shadow-[3px_3px_0px_#1E293B]"
+              >
+                <RefreshCw className="size-3" strokeWidth={2.5} />
+                <span>{isSimulationMode ? "Ganti ke Kamera" : "Lepas / Pindai Ulang"}</span>
+              </Button>
+
+              <Button
+                size="xs"
+                variant="candySecondary"
+                onClick={() => setIsSelectorOpen(true)}
+                className="text-[11px] gap-1 shadow-[3px_3px_0px_#1E293B]"
+              >
+                <Shapes className="size-3 text-accent" strokeWidth={2.5} />
+                <span>Pilih Bangun Lain</span>
+              </Button>
+            </div>
           </div>
         ) : (
           /* Helper hint when marker is not yet detected */
-          <Button
-            size="sm"
-            variant="candySecondary"
-            onClick={() => setIsMarkerModalOpen(true)}
-            className="shadow-[4px_4px_0px_#1E293B] text-xs gap-2 py-2 px-4"
-          >
-            <Lightbulb className="size-4 text-tertiary shrink-0" strokeWidth={2.5} />
-            <span>Belum punya kartu? Buka Katalog Marker</span>
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center gap-2">
+            <Button
+              size="sm"
+              variant="candySecondary"
+              onClick={() => setIsMarkerModalOpen(true)}
+              className="shadow-[4px_4px_0px_#1E293B] text-xs gap-2 py-2 px-4"
+            >
+              <Lightbulb className="size-4 text-tertiary shrink-0" strokeWidth={2.5} />
+              <span>Belum punya kartu? Buka Katalog Marker</span>
+            </Button>
+
+            <Button
+              size="sm"
+              variant="candyMint"
+              onClick={handleEnableSimulation}
+              className="shadow-[4px_4px_0px_#1E293B] text-xs gap-1.5 py-2 px-3 sm:hidden"
+            >
+              <Gamepad2 className="size-3.5" strokeWidth={2.5} />
+              <span>Mode Simulasi</span>
+            </Button>
+          </div>
         )}
       </footer>
 
@@ -918,7 +1031,76 @@ export function ARScanner() {
         </div>
       )}
 
-      {/* 8. Marker Catalog Modal within Scanner */}
+      {/* 8. Visual Geometry Switcher Modal */}
+      <Dialog open={isSelectorOpen} onOpenChange={setIsSelectorOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <Badge variant="yellow">
+                <Shapes className="size-3" strokeWidth={2.5} />
+                <span>PILIHAN MODEL</span>
+              </Badge>
+            </div>
+            <DialogTitle className="mt-1 text-xl font-black">
+              Pilih Bangun Ruang 3D 🎯
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Pilih bangun ruang untuk ditampilkan atau dipindai menggunakan pola marker terkait.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[50vh] overflow-y-auto pr-1">
+            {GEOMETRIES.map((g) => {
+              const isSelected = g.id === activeGeometry.id;
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveGeometry(g);
+                    setIsSelectorOpen(false);
+                  }}
+                  className={cn(
+                    "flex items-center gap-3 rounded-2xl border-2 border-border p-3 text-left transition-all cursor-pointer",
+                    isSelected
+                      ? "bg-accent/15 border-accent shadow-[3px_3px_0px_#8B5CF6]"
+                      : "bg-white hover:bg-muted shadow-[2px_2px_0px_#1E293B]"
+                  )}
+                >
+                  <div className="relative size-12 shrink-0 rounded-xl border-2 border-border bg-slate-900 flex items-center justify-center p-1 overflow-hidden">
+                    <Image
+                      src={g.markerPreviewPath}
+                      alt={g.name}
+                      width={48}
+                      height={48}
+                      className="h-full w-full object-contain"
+                    />
+                    <span className="absolute top-0.5 left-0.5 rounded bg-black/80 px-1 text-[8px] font-mono text-white">
+                      #{g.targetIndex}
+                    </span>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-heading font-bold text-sm text-foreground truncate">
+                        {g.name}
+                      </h4>
+                      {isSelected && (
+                        <Check className="size-4 text-accent shrink-0" strokeWidth={3} />
+                      )}
+                    </div>
+                    <p className="text-[10px] font-mono text-accent truncate mt-0.5">
+                      {g.formulaVolume.formula}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 9. Marker Catalog Modal within Scanner */}
       <MarkerModal
         open={isMarkerModalOpen}
         onOpenChange={setIsMarkerModalOpen}
