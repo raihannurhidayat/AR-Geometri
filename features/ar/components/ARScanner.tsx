@@ -15,6 +15,9 @@ import {
   Sparkles,
   ChevronUp,
   X,
+  Scan,
+  RefreshCw,
+  CheckCircle2,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,7 +43,8 @@ export function ARScanner() {
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [errorHelpTip, setErrorHelpTip] = React.useState<string | null>(null);
   const [activeGeometry, setActiveGeometry] = React.useState<GeometryItem>(GEOMETRIES[0]);
-  const [isMarkerDetected, setIsMarkerDetected] = React.useState<boolean>(true);
+  const [isMarkerDetected, setIsMarkerDetected] = React.useState<boolean>(false);
+  const [isScanning, setIsScanning] = React.useState<boolean>(false);
   const [isAutoRotate, setIsAutoRotate] = React.useState<boolean>(true);
   const [isFormulaDrawerOpen, setIsFormulaDrawerOpen] = React.useState<boolean>(false);
   const [scaleFactor, setScaleFactor] = React.useState<number>(1);
@@ -86,12 +90,10 @@ export function ARScanner() {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
-      setStatus("ready");
-      setTimeout(() => {
-        if (isMounted()) {
-          setStatus("detected");
-        }
-      }, 800);
+
+      // Default state: Camera ready and actively looking for markers (3D model not visible yet)
+      setStatus("scanning");
+      setIsMarkerDetected(false);
     } catch (err: unknown) {
       if (!isMounted()) return;
       console.error("Camera access error:", err);
@@ -117,13 +119,31 @@ export function ARScanner() {
     void requestCameraStream(() => true);
   }, [requestCameraStream]);
 
-  // 2. Stop Camera & Cleanup
   const stopCamera = React.useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
   }, []);
+
+  // 2. Scan Marker Action (Triggered by user aiming at marker)
+  const handleScanMarker = () => {
+    if (isScanning) return;
+    setIsScanning(true);
+
+    // Simulate active image tracking detection
+    setTimeout(() => {
+      setIsScanning(false);
+      setIsMarkerDetected(true);
+      setStatus("detected");
+    }, 600);
+  };
+
+  const handleResetScan = () => {
+    setIsMarkerDetected(false);
+    setStatus("scanning");
+    setIsFormulaDrawerOpen(false);
+  };
 
   // 3. Three.js Procedural 3D Mesh Generator for Geometries
   const create3DMeshForGeometry = React.useCallback((geomId: string): THREE.Group => {
@@ -224,6 +244,8 @@ export function ARScanner() {
     scene.add(dirLight2);
 
     const activeMeshGroup = new THREE.Group();
+    // Hidden by default until marker is scanned
+    activeMeshGroup.visible = false;
     scene.add(activeMeshGroup);
 
     threeRef.current = {
@@ -237,7 +259,7 @@ export function ARScanner() {
     // Render loop
     const animate = () => {
       if (threeRef.current) {
-        if (isAutoRotate && threeRef.current.activeMeshGroup) {
+        if (isAutoRotate && threeRef.current.activeMeshGroup && threeRef.current.activeMeshGroup.visible) {
           threeRef.current.activeMeshGroup.rotation.y += 0.012;
           threeRef.current.activeMeshGroup.rotation.x += 0.005;
         }
@@ -267,7 +289,7 @@ export function ARScanner() {
     };
   }, [isAutoRotate]);
 
-  // 5. Update 3D Model when activeGeometry or isMarkerDetected changes
+  // 5. Update 3D Model: only render when isMarkerDetected is true
   React.useEffect(() => {
     if (!threeRef.current) return;
     const { activeMeshGroup } = threeRef.current;
@@ -281,6 +303,9 @@ export function ARScanner() {
       const newMesh = create3DMeshForGeometry(activeGeometry.id);
       activeMeshGroup.add(newMesh);
       activeMeshGroup.scale.set(scaleFactor, scaleFactor, scaleFactor);
+      activeMeshGroup.visible = true;
+    } else {
+      activeMeshGroup.visible = false;
     }
   }, [activeGeometry, isMarkerDetected, create3DMeshForGeometry, scaleFactor]);
 
@@ -331,32 +356,100 @@ export function ARScanner() {
       {/* Subtle overlay shading for HUD readability */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/70 pointer-events-none z-10" />
 
-      {/* 2. Three.js 3D Virtual Canvas */}
+      {/* 2. Three.js 3D Virtual Canvas (Only displays model when marker is detected) */}
       <div
         ref={canvasContainerRef}
         className="absolute inset-0 h-full w-full z-20 pointer-events-none"
       />
 
-      {/* 3. Scanning Reticle (Center Guide) */}
+      {/* 3. Scanning Reticle (Center Viewfinder) */}
       <div className="absolute inset-0 z-15 flex flex-col items-center justify-center pointer-events-none">
-        <div className="relative size-56 border-2 border-dashed border-white/40 rounded-3xl flex items-center justify-center transition-all duration-300">
-          {/* Animated Scanning Line */}
-          {status !== "error" && (
+        <div
+          className={cn(
+            "relative size-56 rounded-3xl flex flex-col items-center justify-center transition-all duration-300",
+            isMarkerDetected
+              ? "border-2 border-emerald-400/80 shadow-[0_0_20px_rgba(52,211,153,0.25)]"
+              : "border-2 border-dashed border-white/40"
+          )}
+        >
+          {/* Animated Scanning Laser Line (only when actively searching) */}
+          {status !== "error" && !isMarkerDetected && (
             <div className="absolute inset-x-2 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_12px_#38bdf8] animate-pulse top-1/2 -translate-y-1/2" />
           )}
 
           {/* Corner Markers */}
-          <div className="absolute -top-1.5 -left-1.5 size-5 border-t-3 border-l-3 border-cyan-400 rounded-tl-xl" />
-          <div className="absolute -top-1.5 -right-1.5 size-5 border-t-3 border-r-3 border-cyan-400 rounded-tr-xl" />
-          <div className="absolute -bottom-1.5 -left-1.5 size-5 border-b-3 border-l-3 border-cyan-400 rounded-bl-xl" />
-          <div className="absolute -bottom-1.5 -right-1.5 size-5 border-b-3 border-r-3 border-cyan-400 rounded-br-xl" />
+          <div
+            className={cn(
+              "absolute -top-1.5 -left-1.5 size-5 border-t-3 border-l-3 rounded-tl-xl transition-colors",
+              isMarkerDetected ? "border-emerald-400" : "border-cyan-400"
+            )}
+          />
+          <div
+            className={cn(
+              "absolute -top-1.5 -right-1.5 size-5 border-t-3 border-r-3 rounded-tr-xl transition-colors",
+              isMarkerDetected ? "border-emerald-400" : "border-cyan-400"
+            )}
+          />
+          <div
+            className={cn(
+              "absolute -bottom-1.5 -left-1.5 size-5 border-b-3 border-l-3 rounded-bl-xl transition-colors",
+              isMarkerDetected ? "border-emerald-400" : "border-cyan-400"
+            )}
+          />
+          <div
+            className={cn(
+              "absolute -bottom-1.5 -right-1.5 size-5 border-b-3 border-r-3 rounded-br-xl transition-colors",
+              isMarkerDetected ? "border-emerald-400" : "border-cyan-400"
+            )}
+          />
 
-          {/* Instruction inside or below reticle */}
-          <div className="absolute -bottom-12 text-center px-2 w-full">
-            <span className="inline-block rounded-full bg-black/65 backdrop-blur-md px-3 py-1 text-[11px] font-medium text-slate-200 border border-white/10 shadow-xs">
-              {isMarkerDetected
-                ? `${activeGeometry.name} Terdeteksi`
-                : "Arahkan kamera ke pola marker"}
+          {/* Center Scan CTA Button (When marker is not yet detected) */}
+          {!isMarkerDetected && status !== "error" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+              <button
+                type="button"
+                onClick={handleScanMarker}
+                disabled={isScanning}
+                className="pointer-events-auto flex items-center gap-2 rounded-full bg-cyan-400 hover:bg-cyan-300 active:scale-95 text-slate-950 font-bold px-4 py-2 text-xs shadow-lg shadow-cyan-500/30 transition-all cursor-pointer"
+              >
+                {isScanning ? (
+                  <>
+                    <RefreshCw className="size-3.5 animate-spin" />
+                    <span>Mendeteksi...</span>
+                  </>
+                ) : (
+                  <>
+                    <Scan className="size-3.5" />
+                    <span>Pindai Marker</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Instruction label under reticle */}
+          <div className="absolute -bottom-14 text-center px-2 w-full">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium backdrop-blur-md border shadow-xs transition-colors",
+                isMarkerDetected
+                  ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/30"
+                  : "bg-black/70 text-slate-200 border-white/10"
+              )}
+            >
+              {isMarkerDetected ? (
+                <>
+                  <CheckCircle2 className="size-3 text-emerald-400" />
+                  <span>{activeGeometry.name} Terdeteksi</span>
+                </>
+              ) : isScanning ? (
+                <>
+                  <RefreshCw className="size-3 animate-spin text-cyan-400" />
+                  <span>Menganalisis pola marker...</span>
+                </>
+              ) : (
+                <span>Arahkan ke kartu marker lalu klik Pindai</span>
+              )}
             </span>
           </div>
         </div>
@@ -376,9 +469,9 @@ export function ARScanner() {
           <span>Beranda</span>
         </Link>
 
-        {/* Status Badge & Marker Selector */}
+        {/* Marker Switcher & Quick Help */}
         <div className="flex items-center gap-2">
-          {/* Target Geometry Switcher (Allows testing all 7 shapes immediately) */}
+          {/* Target Selector */}
           <div className="relative">
             <select
               aria-label="Pilih Model Bangun Ruang"
@@ -387,7 +480,6 @@ export function ARScanner() {
                 const found = GEOMETRIES.find((g) => g.id === e.target.value);
                 if (found) {
                   setActiveGeometry(found);
-                  setIsMarkerDetected(true);
                 }
               }}
               className="appearance-none rounded-full bg-black/60 backdrop-blur-md border border-cyan-500/40 px-3.5 py-1.5 pr-8 text-xs font-semibold text-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 cursor-pointer"
@@ -452,88 +544,112 @@ export function ARScanner() {
 
       {/* 6. Bottom Floating Action Bar HUD */}
       <footer className="absolute bottom-4 inset-x-0 z-30 flex flex-col items-center gap-2 px-2">
-        {/* Quick Toggle Controls */}
-        <div className="flex items-center gap-1.5 rounded-full bg-black/65 backdrop-blur-md border border-white/20 p-1 shadow-xl">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setIsAutoRotate(!isAutoRotate)}
-            className={`rounded-full h-7 px-2.5 text-[11px] gap-1 ${
-              isAutoRotate ? "bg-cyan-500/20 text-cyan-300" : "text-white/80"
-            }`}
-            title="Toggle Putar Otomatis"
+        {isMarkerDetected ? (
+          /* Controls Active when Marker is Detected */
+          <div className="flex flex-col items-center gap-2 animate-in fade-in slide-in-from-bottom duration-200">
+            <div className="flex items-center gap-1.5 rounded-full bg-black/65 backdrop-blur-md border border-white/20 p-1 shadow-xl">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setIsAutoRotate(!isAutoRotate)}
+                className={`rounded-full h-7 px-2.5 text-[11px] gap-1 ${
+                  isAutoRotate ? "bg-cyan-500/20 text-cyan-300" : "text-white/80"
+                }`}
+                title="Toggle Putar Otomatis"
+              >
+                <RotateCw className={`size-3 ${isAutoRotate ? "animate-spin" : ""}`} />
+                <span>Rotasi</span>
+              </Button>
+
+              <div className="h-3.5 w-px bg-white/20" />
+
+              <Button
+                size="icon-xs"
+                variant="ghost"
+                onClick={() => handleZoom(0.2)}
+                className="rounded-full text-white/80 hover:text-white"
+                title="Perbesar Model"
+              >
+                <ZoomIn className="size-3" />
+              </Button>
+
+              <Button
+                size="icon-xs"
+                variant="ghost"
+                onClick={() => handleZoom(-0.2)}
+                className="rounded-full text-white/80 hover:text-white"
+                title="Perkecil Model"
+              >
+                <ZoomOut className="size-3" />
+              </Button>
+
+              <Button
+                size="icon-xs"
+                variant="ghost"
+                onClick={handleReset}
+                className="rounded-full text-white/80 hover:text-white"
+                title="Reset Ukuran & Posisi"
+              >
+                <RotateCcw className="size-3" />
+              </Button>
+
+              <div className="h-3.5 w-px bg-white/20" />
+
+              {/* Formula Details Toggle */}
+              <Button
+                size="sm"
+                onClick={() => setIsFormulaDrawerOpen(true)}
+                className="rounded-full h-7 px-2.5 text-[11px] bg-indigo-600 hover:bg-indigo-500 text-white font-semibold gap-1"
+              >
+                <BookOpen className="size-3" />
+                <span>Rumus</span>
+              </Button>
+            </div>
+
+            {/* Quick Button to Reset / Scan Other Marker */}
+            <button
+              type="button"
+              onClick={handleResetScan}
+              className="flex items-center gap-1 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/15 px-3 py-1 text-[10px] text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <RefreshCw className="size-2.5" />
+              <span>Lepas / Pindai Marker Lain</span>
+            </button>
+          </div>
+        ) : (
+          /* Helper hint when marker is not yet detected */
+          <button
+            type="button"
+            onClick={() => setIsMarkerModalOpen(true)}
+            className="flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 px-3.5 py-1.5 text-xs text-slate-200 hover:bg-black/80 transition-colors shadow-lg cursor-pointer"
           >
-            <RotateCw className={`size-3 ${isAutoRotate ? "animate-spin" : ""}`} />
-            <span>Rotasi</span>
-          </Button>
-
-          <div className="h-3.5 w-px bg-white/20" />
-
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            onClick={() => handleZoom(0.2)}
-            className="rounded-full text-white/80 hover:text-white"
-            title="Perbesar Model"
-          >
-            <ZoomIn className="size-3" />
-          </Button>
-
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            onClick={() => handleZoom(-0.2)}
-            className="rounded-full text-white/80 hover:text-white"
-            title="Perkecil Model"
-          >
-            <ZoomOut className="size-3" />
-          </Button>
-
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            onClick={handleReset}
-            className="rounded-full text-white/80 hover:text-white"
-            title="Reset Ukuran & Posisi"
-          >
-            <RotateCcw className="size-3" />
-          </Button>
-
-          <div className="h-3.5 w-px bg-white/20" />
-
-          {/* Formula Details Toggle */}
-          <Button
-            size="sm"
-            onClick={() => setIsFormulaDrawerOpen(true)}
-            className="rounded-full h-7 px-2.5 text-[11px] bg-indigo-600 hover:bg-indigo-500 text-white font-semibold gap-1"
-          >
-            <BookOpen className="size-3" />
-            <span>Rumus</span>
-          </Button>
-        </div>
+            <HelpCircle className="size-3.5 text-cyan-400" />
+            <span>Belum punya kartu? Buka Katalog Marker</span>
+          </button>
+        )}
       </footer>
 
       {/* 7. Bottom Drawer / Sheet for Formula & Characteristics */}
       {isFormulaDrawerOpen && (
-        <div className="absolute inset-x-0 bottom-0 z-50 max-h-[75vh] overflow-y-auto rounded-t-3xl border-t border-border bg-slate-900/95 p-6 backdrop-blur-xl shadow-2xl animate-in slide-in-from-bottom duration-200">
+        <div className="absolute inset-x-0 bottom-0 z-50 max-h-[75vh] overflow-y-auto rounded-t-3xl border-t border-border bg-slate-900/95 p-5 backdrop-blur-xl shadow-2xl animate-in slide-in-from-bottom duration-200">
           <div className="mx-auto max-w-xl">
-            <div className="flex items-center justify-between pb-4 border-b border-white/10">
-              <div className="flex items-center gap-2.5">
-                <div className="flex size-9 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400">
-                  <Sparkles className="size-5" />
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400">
+                  <Sparkles className="size-4" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">
+                  <h3 className="text-base font-bold text-white">
                     {activeGeometry.name}
                   </h3>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-[10px] text-slate-400">
                     Target Marker #{activeGeometry.targetIndex}
                   </p>
                 </div>
               </div>
 
               <Button
-                size="icon-sm"
+                size="icon-xs"
                 variant="ghost"
                 onClick={() => setIsFormulaDrawerOpen(false)}
                 className="rounded-full text-slate-400 hover:text-white"
@@ -543,40 +659,40 @@ export function ARScanner() {
             </div>
 
             {/* Formula Cards */}
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/40 p-4">
-                <span className="text-[11px] font-semibold text-indigo-300 uppercase tracking-wider">
+            <div className="mt-3 flex flex-col gap-2.5">
+              <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/40 p-3">
+                <span className="text-[10px] font-semibold text-indigo-300 uppercase tracking-wider">
                   Rumus Volume
                 </span>
-                <p className="mt-1 text-xl font-mono font-bold text-white">
+                <p className="mt-0.5 text-lg font-mono font-bold text-white">
                   {activeGeometry.formulaVolume.formula}
                 </p>
-                <p className="mt-1 text-xs text-indigo-200/80 leading-relaxed">
+                <p className="mt-0.5 text-[11px] text-indigo-200/80 leading-relaxed">
                   {activeGeometry.formulaVolume.description}
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-cyan-500/30 bg-cyan-950/40 p-4">
-                <span className="text-[11px] font-semibold text-cyan-300 uppercase tracking-wider">
+              <div className="rounded-2xl border border-cyan-500/30 bg-cyan-950/40 p-3">
+                <span className="text-[10px] font-semibold text-cyan-300 uppercase tracking-wider">
                   Rumus Luas Permukaan
                 </span>
-                <p className="mt-1 text-xl font-mono font-bold text-white">
+                <p className="mt-0.5 text-lg font-mono font-bold text-white">
                   {activeGeometry.formulaSurface.formula}
                 </p>
-                <p className="mt-1 text-xs text-cyan-200/80 leading-relaxed">
+                <p className="mt-0.5 text-[11px] text-cyan-200/80 leading-relaxed">
                   {activeGeometry.formulaSurface.description}
                 </p>
               </div>
             </div>
 
             {/* Characteristics */}
-            <div className="mt-4">
-              <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+            <div className="mt-3">
+              <h4 className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Karakteristik & Ciri Bangun Ruang
               </h4>
-              <ul className="space-y-1.5 text-xs text-slate-300">
+              <ul className="space-y-1 text-xs text-slate-300">
                 {activeGeometry.characteristics.map((c, i) => (
-                  <li key={i} className="flex items-start gap-2">
+                  <li key={i} className="flex items-start gap-1.5">
                     <span className="text-cyan-400 font-bold">•</span>
                     <span>{c}</span>
                   </li>
@@ -585,13 +701,13 @@ export function ARScanner() {
             </div>
 
             {/* Variables Legend */}
-            <div className="mt-4 pt-3 border-t border-white/10">
-              <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            <div className="mt-3 pt-2.5 border-t border-white/10">
+              <h4 className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                 Keterangan Variabel
               </h4>
-              <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="grid grid-cols-2 gap-1.5 text-[11px]">
                 {Object.entries(activeGeometry.variables).map(([key, val]) => (
-                  <div key={key} className="flex items-center gap-1.5">
+                  <div key={key} className="flex items-center gap-1">
                     <span className="font-mono font-bold text-indigo-400">{key}</span>
                     <span className="text-slate-400">=</span>
                     <span className="text-slate-200">{val}</span>
