@@ -40,27 +40,27 @@ export function MarkerModal({ open, onOpenChange }: MarkerModalProps) {
             <QrCode className="size-4" />
             <span>Katalog Kartu Marker WebAR</span>
           </div>
-          <DialogTitle className="text-2xl font-bold">
+          <DialogTitle className="text-xl font-bold">
             Kartu Marker Bangun Ruang
           </DialogTitle>
-          <DialogDescription>
-            Pindai gambar di bawah ini menggunakan kamera AR untuk memunculkan model 3D interaktif. Anda dapat mencetak kartu ini atau menampilkannya di layar HP lain / laptop.
+          <DialogDescription className="text-xs">
+            Pindai gambar di bawah ini menggunakan kamera AR untuk memunculkan model 3D interaktif. Anda dapat mencetak kartu ini atau menampilkannya di layar HP lain.
           </DialogDescription>
         </DialogHeader>
 
         {/* Tips Box */}
-        <div className="mt-4 flex items-start gap-3 rounded-2xl bg-amber-500/10 p-3.5 text-xs text-amber-900 dark:text-amber-200 border border-amber-500/20">
-          <Lightbulb className="size-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
-          <div className="space-y-1">
-            <p className="font-semibold">Tips Pemindaian Optimal:</p>
+        <div className="mt-3 flex items-start gap-2.5 rounded-2xl bg-amber-500/10 p-3 text-[11px] text-amber-900 dark:text-amber-200 border border-amber-500/20">
+          <Lightbulb className="size-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+          <div className="space-y-0.5">
+            <p className="font-semibold">Tips Pemindaian:</p>
             <p className="text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
-              Pastikan ruangan memiliki pencahayaan cukup, hindari pantulan cahaya pada layar monitor, dan arahkan kamera tegak lurus dengan jarak sekitar 15–30 cm dari kartu.
+              Pastikan pencahayaan cukup dan arahkan kamera tegak lurus dengan jarak sekitar 15–30 cm dari kartu.
             </p>
           </div>
         </div>
 
-        {/* Grid of 7 Markers */}
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 max-h-[50vh] overflow-y-auto pr-1">
+        {/* List of 7 Markers */}
+        <div className="mt-4 flex flex-col gap-3 max-h-[50vh] overflow-y-auto pr-1">
           {GEOMETRIES.map((item) => (
             <div
               key={item.id}

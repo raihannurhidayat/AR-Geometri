@@ -318,7 +318,7 @@ export function ARScanner() {
   };
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-black text-white select-none">
+    <div className="relative h-screen w-full overflow-hidden bg-black text-white select-none">
       {/* 1. Live Background Video Stream */}
       <video
         ref={videoRef}
@@ -339,31 +339,31 @@ export function ARScanner() {
 
       {/* 3. Scanning Reticle (Center Guide) */}
       <div className="absolute inset-0 z-15 flex flex-col items-center justify-center pointer-events-none">
-        <div className="relative size-64 sm:size-72 border-2 border-dashed border-white/40 rounded-3xl flex items-center justify-center transition-all duration-300">
+        <div className="relative size-56 border-2 border-dashed border-white/40 rounded-3xl flex items-center justify-center transition-all duration-300">
           {/* Animated Scanning Line */}
           {status !== "error" && (
             <div className="absolute inset-x-2 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_12px_#38bdf8] animate-pulse top-1/2 -translate-y-1/2" />
           )}
 
           {/* Corner Markers */}
-          <div className="absolute -top-1.5 -left-1.5 size-6 border-t-4 border-l-4 border-cyan-400 rounded-tl-xl" />
-          <div className="absolute -top-1.5 -right-1.5 size-6 border-t-4 border-r-4 border-cyan-400 rounded-tr-xl" />
-          <div className="absolute -bottom-1.5 -left-1.5 size-6 border-b-4 border-l-4 border-cyan-400 rounded-bl-xl" />
-          <div className="absolute -bottom-1.5 -right-1.5 size-6 border-b-4 border-r-4 border-cyan-400 rounded-br-xl" />
+          <div className="absolute -top-1.5 -left-1.5 size-5 border-t-3 border-l-3 border-cyan-400 rounded-tl-xl" />
+          <div className="absolute -top-1.5 -right-1.5 size-5 border-t-3 border-r-3 border-cyan-400 rounded-tr-xl" />
+          <div className="absolute -bottom-1.5 -left-1.5 size-5 border-b-3 border-l-3 border-cyan-400 rounded-bl-xl" />
+          <div className="absolute -bottom-1.5 -right-1.5 size-5 border-b-3 border-r-3 border-cyan-400 rounded-br-xl" />
 
           {/* Instruction inside or below reticle */}
-          <div className="absolute -bottom-14 text-center px-4">
-            <span className="rounded-full bg-black/60 backdrop-blur-md px-3.5 py-1 text-xs font-medium text-slate-200 border border-white/10 shadow-sm">
+          <div className="absolute -bottom-12 text-center px-2 w-full">
+            <span className="inline-block rounded-full bg-black/65 backdrop-blur-md px-3 py-1 text-[11px] font-medium text-slate-200 border border-white/10 shadow-xs">
               {isMarkerDetected
-                ? `Marker Terdeteksi: ${activeGeometry.name}`
-                : "Arahkan kamera tegak lurus ke kartu marker"}
+                ? `${activeGeometry.name} Terdeteksi`
+                : "Arahkan kamera ke pola marker"}
             </span>
           </div>
         </div>
       </div>
 
       {/* 4. Top Floating Header HUD */}
-      <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between p-4 sm:p-6">
+      <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between p-3">
         <Link
           href="/"
           onClick={stopCamera}
@@ -451,23 +451,23 @@ export function ARScanner() {
       )}
 
       {/* 6. Bottom Floating Action Bar HUD */}
-      <footer className="absolute bottom-6 inset-x-0 z-30 flex flex-col items-center gap-3 px-4">
+      <footer className="absolute bottom-4 inset-x-0 z-30 flex flex-col items-center gap-2 px-2">
         {/* Quick Toggle Controls */}
-        <div className="flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-md border border-white/20 p-1.5 shadow-xl">
+        <div className="flex items-center gap-1.5 rounded-full bg-black/65 backdrop-blur-md border border-white/20 p-1 shadow-xl">
           <Button
             size="sm"
             variant="ghost"
             onClick={() => setIsAutoRotate(!isAutoRotate)}
-            className={`rounded-full h-8 px-3 text-xs gap-1.5 ${
+            className={`rounded-full h-7 px-2.5 text-[11px] gap-1 ${
               isAutoRotate ? "bg-cyan-500/20 text-cyan-300" : "text-white/80"
             }`}
             title="Toggle Putar Otomatis"
           >
-            <RotateCw className={`size-3.5 ${isAutoRotate ? "animate-spin" : ""}`} />
-            <span className="hidden sm:inline">Rotasi</span>
+            <RotateCw className={`size-3 ${isAutoRotate ? "animate-spin" : ""}`} />
+            <span>Rotasi</span>
           </Button>
 
-          <div className="h-4 w-px bg-white/20" />
+          <div className="h-3.5 w-px bg-white/20" />
 
           <Button
             size="icon-xs"
@@ -476,7 +476,7 @@ export function ARScanner() {
             className="rounded-full text-white/80 hover:text-white"
             title="Perbesar Model"
           >
-            <ZoomIn className="size-3.5" />
+            <ZoomIn className="size-3" />
           </Button>
 
           <Button
@@ -486,7 +486,7 @@ export function ARScanner() {
             className="rounded-full text-white/80 hover:text-white"
             title="Perkecil Model"
           >
-            <ZoomOut className="size-3.5" />
+            <ZoomOut className="size-3" />
           </Button>
 
           <Button
@@ -496,19 +496,19 @@ export function ARScanner() {
             className="rounded-full text-white/80 hover:text-white"
             title="Reset Ukuran & Posisi"
           >
-            <RotateCcw className="size-3.5" />
+            <RotateCcw className="size-3" />
           </Button>
 
-          <div className="h-4 w-px bg-white/20" />
+          <div className="h-3.5 w-px bg-white/20" />
 
           {/* Formula Details Toggle */}
           <Button
             size="sm"
             onClick={() => setIsFormulaDrawerOpen(true)}
-            className="rounded-full h-8 px-3 text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold gap-1.5"
+            className="rounded-full h-7 px-2.5 text-[11px] bg-indigo-600 hover:bg-indigo-500 text-white font-semibold gap-1"
           >
-            <BookOpen className="size-3.5" />
-            <span>Rumus & Info</span>
+            <BookOpen className="size-3" />
+            <span>Rumus</span>
           </Button>
         </div>
       </footer>
