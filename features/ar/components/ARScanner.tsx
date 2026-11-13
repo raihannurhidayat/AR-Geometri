@@ -18,6 +18,7 @@ import {
   Scan,
   RefreshCw,
   CheckCircle2,
+  Move,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,11 @@ export function ARScanner() {
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const canvasContainerRef = React.useRef<HTMLDivElement | null>(null);
   const streamRef = React.useRef<MediaStream | null>(null);
+
+  // Gesture refs for mouse and touch interactions
+  const isPointerDownRef = React.useRef(false);
+  const lastPointerPosRef = React.useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const lastPinchDistanceRef = React.useRef<number | null>(null);
 
   // Three.js instances ref
   const threeRef = React.useRef<{
@@ -91,7 +97,7 @@ export function ARScanner() {
         await videoRef.current.play();
       }
 
-      // Default state: Camera ready and actively looking for markers (3D model not visible yet)
+      // Default state: Camera ready, searching for marker
       setStatus("scanning");
       setIsMarkerDetected(false);
     } catch (err: unknown) {
@@ -126,12 +132,11 @@ export function ARScanner() {
     }
   }, []);
 
-  // 2. Scan Marker Action (Triggered by user aiming at marker)
+  // 2. Scan Marker Action
   const handleScanMarker = () => {
     if (isScanning) return;
     setIsScanning(true);
 
-    // Simulate active image tracking detection
     setTimeout(() => {
       setIsScanning(false);
       setIsMarkerDetected(true);
@@ -143,6 +148,11 @@ export function ARScanner() {
     setIsMarkerDetected(false);
     setStatus("scanning");
     setIsFormulaDrawerOpen(false);
+    setScaleFactor(1);
+    if (threeRef.current?.activeMeshGroup) {
+      threeRef.current.activeMeshGroup.rotation.set(0, 0, 0);
+      threeRef.current.activeMeshGroup.scale.set(1, 1, 1);
+    }
   };
 
   // 3. Three.js Procedural 3D Mesh Generator for Geometries
@@ -170,33 +180,31 @@ export function ARScanner() {
     switch (geomId) {
       case "cube":
         geometry = new THREE.BoxGeometry(2, 2, 2);
-        mainMaterial.color.setHex(0x3b82f6); // Indigo Blue
+        mainMaterial.color.setHex(0x3b82f6);
         break;
       case "cuboid":
         geometry = new THREE.BoxGeometry(2.8, 1.6, 1.8);
-        mainMaterial.color.setHex(0x06b6d4); // Cyan
+        mainMaterial.color.setHex(0x06b6d4);
         break;
       case "prism":
-        // Triangular Prism: 3-sided cylinder
         geometry = new THREE.CylinderGeometry(1.6, 1.6, 2.4, 3);
-        mainMaterial.color.setHex(0x10b981); // Emerald
+        mainMaterial.color.setHex(0x10b981);
         break;
       case "pyramid":
-        // 4-sided cone is a square pyramid
         geometry = new THREE.ConeGeometry(1.8, 2.4, 4);
-        mainMaterial.color.setHex(0xf59e0b); // Amber
+        mainMaterial.color.setHex(0xf59e0b);
         break;
       case "cylinder":
         geometry = new THREE.CylinderGeometry(1.2, 1.2, 2.5, 32);
-        mainMaterial.color.setHex(0x8b5cf6); // Purple
+        mainMaterial.color.setHex(0x8b5cf6);
         break;
       case "cone":
         geometry = new THREE.ConeGeometry(1.5, 2.6, 32);
-        mainMaterial.color.setHex(0xf43f5e); // Rose
+        mainMaterial.color.setHex(0xf43f5e);
         break;
       case "sphere":
         geometry = new THREE.SphereGeometry(1.4, 32, 24);
-        mainMaterial.color.setHex(0x4f46e5); // Deep Indigo
+        mainMaterial.color.setHex(0x4f46e5);
         break;
       default:
         geometry = new THREE.BoxGeometry(2, 2, 2);
@@ -205,7 +213,7 @@ export function ARScanner() {
     const mesh = new THREE.Mesh(geometry, mainMaterial);
     group.add(mesh);
 
-    // Add glowing edges
+    // Glowing edges
     const edges = new THREE.EdgesGeometry(geometry);
     const line = new THREE.LineSegments(edges, wireframeMaterial);
     group.add(line);
@@ -244,7 +252,6 @@ export function ARScanner() {
     scene.add(dirLight2);
 
     const activeMeshGroup = new THREE.Group();
-    // Hidden by default until marker is scanned
     activeMeshGroup.visible = false;
     scene.add(activeMeshGroup);
 
@@ -260,8 +267,7 @@ export function ARScanner() {
     const animate = () => {
       if (threeRef.current) {
         if (isAutoRotate && threeRef.current.activeMeshGroup && threeRef.current.activeMeshGroup.visible) {
-          threeRef.current.activeMeshGroup.rotation.y += 0.012;
-          threeRef.current.activeMeshGroup.rotation.x += 0.005;
+          threeRef.current.activeMeshGroup.rotation.y += 0.01;
         }
         threeRef.current.renderer.render(threeRef.current.scene, threeRef.current.camera);
         threeRef.current.animationFrameId = requestAnimationFrame(animate);
@@ -294,7 +300,6 @@ export function ARScanner() {
     if (!threeRef.current) return;
     const { activeMeshGroup } = threeRef.current;
 
-    // Clear previous children
     while (activeMeshGroup.children.length > 0) {
       activeMeshGroup.remove(activeMeshGroup.children[0]);
     }
@@ -323,11 +328,132 @@ export function ARScanner() {
     };
   }, [requestCameraStream, stopCamera]);
 
-  // User Actions
+  // 7. Interactive Gesture Listeners (Mouse Drag & Scroll + Touch Drag & Pinch-to-Zoom)
+  React.useEffect(() => {
+    const container = canvasContainerRef.current;
+    if (!container || !isMarkerDetected) return;
+
+    // A. Mouse Pointer Drag (Desktop)
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      isPointerDownRef.current = true;
+      lastPointerPosRef.current = { x: e.clientX, y: e.clientY };
+      setIsAutoRotate(false);
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isPointerDownRef.current || !threeRef.current) return;
+      const dx = e.clientX - lastPointerPosRef.current.x;
+      const dy = e.clientY - lastPointerPosRef.current.y;
+      lastPointerPosRef.current = { x: e.clientX, y: e.clientY };
+
+      const { activeMeshGroup } = threeRef.current;
+      if (activeMeshGroup) {
+        activeMeshGroup.rotation.y += dx * 0.008;
+        activeMeshGroup.rotation.x += dy * 0.008;
+      }
+    };
+
+    const onPointerUp = () => {
+      isPointerDownRef.current = false;
+    };
+
+    // B. Mouse Wheel Zoom (Desktop)
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const zoomStep = e.deltaY < 0 ? 0.1 : -0.1;
+      setScaleFactor((prev) => {
+        const next = Math.min(Math.max(prev + zoomStep, 0.4), 3.0);
+        if (threeRef.current?.activeMeshGroup) {
+          threeRef.current.activeMeshGroup.scale.set(next, next, next);
+        }
+        return next;
+      });
+    };
+
+    // C. Touch Drag (1-finger rotate) & Pinch (2-finger zoom) on Mobile
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        isPointerDownRef.current = true;
+        lastPointerPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        setIsAutoRotate(false);
+      } else if (e.touches.length === 2) {
+        isPointerDownRef.current = false;
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        lastPinchDistanceRef.current = Math.hypot(dx, dy);
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 1 && isPointerDownRef.current && threeRef.current) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - lastPointerPosRef.current.x;
+        const dy = e.touches[0].clientY - lastPointerPosRef.current.y;
+        lastPointerPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+
+        const { activeMeshGroup } = threeRef.current;
+        if (activeMeshGroup) {
+          activeMeshGroup.rotation.y += dx * 0.008;
+          activeMeshGroup.rotation.x += dy * 0.008;
+        }
+      } else if (e.touches.length === 2 && lastPinchDistanceRef.current !== null && threeRef.current) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const currentDistance = Math.hypot(dx, dy);
+        const distanceDelta = currentDistance - lastPinchDistanceRef.current;
+        lastPinchDistanceRef.current = currentDistance;
+
+        setScaleFactor((prev) => {
+          const next = Math.min(Math.max(prev + distanceDelta * 0.006, 0.4), 3.0);
+          if (threeRef.current?.activeMeshGroup) {
+            threeRef.current.activeMeshGroup.scale.set(next, next, next);
+          }
+          return next;
+        });
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        isPointerDownRef.current = false;
+        lastPinchDistanceRef.current = null;
+      } else if (e.touches.length === 1) {
+        lastPinchDistanceRef.current = null;
+        lastPointerPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        isPointerDownRef.current = true;
+      }
+    };
+
+    container.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+    container.addEventListener("wheel", onWheel, { passive: false });
+    container.addEventListener("touchstart", onTouchStart, { passive: false });
+    container.addEventListener("touchmove", onTouchMove, { passive: false });
+    container.addEventListener("touchend", onTouchEnd);
+    container.addEventListener("touchcancel", onTouchEnd);
+
+    return () => {
+      container.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+      container.removeEventListener("wheel", onWheel);
+      container.removeEventListener("touchstart", onTouchStart);
+      container.removeEventListener("touchmove", onTouchMove);
+      container.removeEventListener("touchend", onTouchEnd);
+      container.removeEventListener("touchcancel", onTouchEnd);
+    };
+  }, [isMarkerDetected]);
+
+  // Button Actions
   const handleZoom = (delta: number) => {
     setScaleFactor((prev) => {
-      const next = Math.min(Math.max(prev + delta, 0.5), 2.2);
-      if (threeRef.current) {
+      const next = Math.min(Math.max(prev + delta, 0.4), 3.0);
+      if (threeRef.current?.activeMeshGroup) {
         threeRef.current.activeMeshGroup.scale.set(next, next, next);
       }
       return next;
@@ -336,7 +462,7 @@ export function ARScanner() {
 
   const handleReset = () => {
     setScaleFactor(1);
-    if (threeRef.current) {
+    if (threeRef.current?.activeMeshGroup) {
       threeRef.current.activeMeshGroup.scale.set(1, 1, 1);
       threeRef.current.activeMeshGroup.rotation.set(0, 0, 0);
     }
@@ -356,10 +482,15 @@ export function ARScanner() {
       {/* Subtle overlay shading for HUD readability */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/70 pointer-events-none z-10" />
 
-      {/* 2. Three.js 3D Virtual Canvas (Only displays model when marker is detected) */}
+      {/* 2. Interactive Three.js 3D Virtual Canvas (Mouse drag/scroll & Touch drag/pinch) */}
       <div
         ref={canvasContainerRef}
-        className="absolute inset-0 h-full w-full z-20 pointer-events-none"
+        className={cn(
+          "absolute inset-0 h-full w-full z-20",
+          isMarkerDetected
+            ? "pointer-events-auto touch-none cursor-grab active:cursor-grabbing"
+            : "pointer-events-none"
+        )}
       />
 
       {/* 3. Scanning Reticle (Center Viewfinder) */}
@@ -372,7 +503,7 @@ export function ARScanner() {
               : "border-2 border-dashed border-white/40"
           )}
         >
-          {/* Animated Scanning Laser Line (only when actively searching) */}
+          {/* Animated Scanning Laser Line (only when searching) */}
           {status !== "error" && !isMarkerDetected && (
             <div className="absolute inset-x-2 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_12px_#38bdf8] animate-pulse top-1/2 -translate-y-1/2" />
           )}
@@ -506,6 +637,16 @@ export function ARScanner() {
           </Button>
         </div>
       </header>
+
+      {/* Gesture Hint Badge (Appears when marker is detected) */}
+      {isMarkerDetected && (
+        <div className="absolute top-14 inset-x-0 z-25 flex justify-center pointer-events-none animate-in fade-in duration-300">
+          <div className="flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 px-3 py-1 text-[10px] text-slate-300">
+            <Move className="size-3 text-cyan-400" />
+            <span>Geser untuk memutar • Cubit/scroll untuk zoom</span>
+          </div>
+        </div>
+      )}
 
       {/* 5. Error Overlay (if camera fails or denied) */}
       {status === "error" && (
