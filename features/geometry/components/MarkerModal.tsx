@@ -9,18 +9,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { GEOMETRIES } from "../data/geometries";
 
 interface MarkerModalProps {
-  children?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
-export function MarkerModal({ children, open, onOpenChange }: MarkerModalProps) {
+export function MarkerModal({ open, onOpenChange }: MarkerModalProps) {
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
 
   const handleDownload = (path: string, name: string) => {
@@ -36,7 +34,6 @@ export function MarkerModal({ children, open, onOpenChange }: MarkerModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {children && <DialogTrigger render={<>{children}</>} />}
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold text-xs tracking-wider uppercase">

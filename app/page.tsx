@@ -1,3 +1,6 @@
+"use client";
+
+import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -17,6 +20,8 @@ import { GEOMETRIES } from "@/features/geometry/data/geometries";
 import { MarkerModal } from "@/features/geometry/components/MarkerModal";
 
 export default function Home() {
+  const [isMarkerModalOpen, setIsMarkerModalOpen] = React.useState(false);
+
   return (
     <div className="min-h-screen flex flex-col bg-background selection:bg-indigo-500 selection:text-white">
       {/* Top Navbar */}
@@ -37,12 +42,15 @@ export default function Home() {
           </Link>
 
           <div className="flex items-center gap-2">
-            <MarkerModal>
-              <Button variant="ghost" size="sm" className="hidden sm:inline-flex gap-1.5 text-xs">
-                <Layers className="size-3.5" />
-                <span>Katalog Marker</span>
-              </Button>
-            </MarkerModal>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMarkerModalOpen(true)}
+              className="hidden sm:inline-flex gap-1.5 text-xs"
+            >
+              <Layers className="size-3.5" />
+              <span>Katalog Marker</span>
+            </Button>
 
             <Link
               href="/scan"
@@ -109,16 +117,15 @@ export default function Home() {
                 <ArrowRight className="size-4 ml-1" />
               </Link>
 
-              <MarkerModal>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full sm:w-auto h-12 rounded-2xl border-border bg-background/80 hover:bg-muted text-base font-medium gap-2 px-5"
-                >
-                  <Layers className="size-4 text-indigo-500" />
-                  <span>Lihat & Unduh Marker</span>
-                </Button>
-              </MarkerModal>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => setIsMarkerModalOpen(true)}
+                className="w-full sm:w-auto h-12 rounded-2xl border-border bg-background/80 hover:bg-muted text-base font-medium gap-2 px-5"
+              >
+                <Layers className="size-4 text-indigo-500" />
+                <span>Lihat & Unduh Marker</span>
+              </Button>
             </div>
 
             {/* Trust / Benefit Badges */}
@@ -165,12 +172,13 @@ export default function Home() {
                   Buka atau cetak gambar pola marker bangun ruang. Anda juga bisa menampilkannya di layar HP lain atau layar monitor komputer.
                 </p>
                 <div className="mt-4 pt-3 border-t border-border/60 w-full">
-                  <MarkerModal>
-                    <button className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
-                      <span>Buka Katalog Marker</span>
-                      <ArrowRight className="size-3" />
-                    </button>
-                  </MarkerModal>
+                  <button
+                    onClick={() => setIsMarkerModalOpen(true)}
+                    className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Buka Katalog Marker</span>
+                    <ArrowRight className="size-3" />
+                  </button>
                 </div>
               </div>
 
@@ -311,6 +319,12 @@ export default function Home() {
           <p>© 2026 AR Geometri. Dibuat untuk pengalaman belajar visual interaktif.</p>
         </div>
       </footer>
+
+      {/* Marker Catalog Modal */}
+      <MarkerModal
+        open={isMarkerModalOpen}
+        onOpenChange={setIsMarkerModalOpen}
+      />
     </div>
   );
 }
