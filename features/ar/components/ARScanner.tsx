@@ -600,7 +600,7 @@ export function ARScanner() {
         <div className="absolute inset-0 z-15 flex flex-col items-center justify-center pointer-events-none px-4">
           <div
             className={cn(
-              "relative size-60 sm:size-64 rounded-3xl flex flex-col items-center justify-center transition-all duration-300",
+              "relative size-52 sm:size-64 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center transition-all duration-300",
               isMarkerDetected
                 ? "border-3 border-quaternary bg-quaternary/10 shadow-[0_0_24px_rgba(52,211,153,0.35)]"
                 : "border-3 border-dashed border-white/60 bg-black/20"
@@ -614,47 +614,47 @@ export function ARScanner() {
             {/* Chunky Corner Brackets with Hard Contrast */}
             <div
               className={cn(
-                "absolute -top-2 -left-2 size-6 border-t-4 border-l-4 rounded-tl-xl transition-colors",
+                "absolute -top-2 -left-2 size-5 sm:size-6 border-t-4 border-l-4 rounded-tl-xl transition-colors",
                 isMarkerDetected ? "border-quaternary" : "border-tertiary"
               )}
             />
             <div
               className={cn(
-                "absolute -top-2 -right-2 size-6 border-t-4 border-r-4 rounded-tr-xl transition-colors",
+                "absolute -top-2 -right-2 size-5 sm:size-6 border-t-4 border-r-4 rounded-tr-xl transition-colors",
                 isMarkerDetected ? "border-quaternary" : "border-tertiary"
               )}
             />
             <div
               className={cn(
-                "absolute -bottom-2 -left-2 size-6 border-b-4 border-l-4 rounded-bl-xl transition-colors",
+                "absolute -bottom-2 -left-2 size-5 sm:size-6 border-b-4 border-l-4 rounded-bl-xl transition-colors",
                 isMarkerDetected ? "border-quaternary" : "border-tertiary"
               )}
             />
             <div
               className={cn(
-                "absolute -bottom-2 -right-2 size-6 border-b-4 border-r-4 rounded-br-xl transition-colors",
+                "absolute -bottom-2 -right-2 size-5 sm:size-6 border-b-4 border-r-4 rounded-br-xl transition-colors",
                 isMarkerDetected ? "border-quaternary" : "border-tertiary"
               )}
             />
 
             {/* Center Scan Candy Button */}
             {!isMarkerDetected && status !== "error" && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-3 sm:p-4">
                 <Button
                   variant="candyYellow"
-                  size="lg"
+                  size="default"
                   onClick={handleScanMarker}
                   disabled={isScanning}
-                  className="pointer-events-auto shadow-[4px_4px_0px_#1E293B] gap-2 h-11 px-5 text-xs sm:text-sm font-extrabold"
+                  className="pointer-events-auto shadow-[3px_3px_0px_#1E293B] sm:shadow-[4px_4px_0px_#1E293B] gap-1.5 sm:gap-2 h-10 sm:h-11 px-4 sm:px-5 text-xs sm:text-sm font-extrabold"
                 >
                   {isScanning ? (
                     <>
-                      <RefreshCw className="size-4 animate-spin text-foreground" strokeWidth={2.5} />
+                      <RefreshCw className="size-3.5 sm:size-4 animate-spin text-foreground" strokeWidth={2.5} />
                       <span>Mendeteksi...</span>
                     </>
                   ) : (
                     <>
-                      <Scan className="size-4.5 text-foreground" strokeWidth={2.5} />
+                      <Scan className="size-4 sm:size-4.5 text-foreground" strokeWidth={2.5} />
                       <span>Pindai Marker</span>
                     </>
                   )}
@@ -663,10 +663,10 @@ export function ARScanner() {
             )}
 
             {/* Instruction Label under reticle as a Playful Sticker Pill */}
-            <div className="absolute -bottom-16 text-center px-2 w-full">
+            <div className="absolute -bottom-14 sm:-bottom-16 text-center px-2 w-full">
               <span
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-full border-2 border-border px-4 py-1.5 text-xs font-bold shadow-[3px_3px_0px_#1E293B] transition-all",
+                  "inline-flex items-center gap-1.5 sm:gap-2 rounded-full border-2 border-border px-3 sm:px-4 py-1 sm:py-1.5 text-[11px] sm:text-xs font-bold shadow-[2px_2px_0px_#1E293B] sm:shadow-[3px_3px_0px_#1E293B] transition-all",
                   isMarkerDetected
                     ? "bg-quaternary text-foreground"
                     : "bg-white text-foreground"
@@ -674,13 +674,13 @@ export function ARScanner() {
               >
                 {isMarkerDetected ? (
                   <>
-                    <CheckCircle2 className="size-4 text-foreground" strokeWidth={3} />
+                    <CheckCircle2 className="size-3.5 sm:size-4 text-foreground" strokeWidth={3} />
                     <span>{activeGeometry.name} Terdeteksi! 🎉</span>
                   </>
                 ) : isScanning ? (
                   <>
-                    <RefreshCw className="size-3.5 animate-spin text-accent" strokeWidth={2.5} />
-                    <span>Menganalisis pola kartu marker...</span>
+                    <RefreshCw className="size-3 sm:size-3.5 animate-spin text-accent" strokeWidth={2.5} />
+                    <span>Menganalisis pola marker...</span>
                   </>
                 ) : (
                   <span>Arahkan ke kartu {activeGeometry.name} lalu klik Pindai 🔍</span>
@@ -692,54 +692,54 @@ export function ARScanner() {
       )}
 
       {/* 4. Top Floating Header HUD */}
-      <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between p-3 sm:p-4">
+      <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between p-2.5 sm:p-4 gap-1.5 sm:gap-2">
         {/* Back to Home Candy Button */}
         <Link
           href="/"
           onClick={stopCamera}
           className={cn(
             buttonVariants({ variant: "candySecondary", size: "sm" }),
-            "gap-1.5 shadow-[3px_3px_0px_#1E293B] text-xs font-bold"
+            "gap-1 sm:gap-1.5 shadow-[2px_2px_0px_#1E293B] sm:shadow-[3px_3px_0px_#1E293B] text-xs font-bold px-2.5 sm:px-3 h-8 sm:h-9 shrink-0"
           )}
         >
-          <ArrowLeft className="size-4" strokeWidth={2.5} />
-          <span>Beranda</span>
+          <ArrowLeft className="size-3.5 sm:size-4" strokeWidth={2.5} />
+          <span className="hidden sm:inline">Beranda</span>
         </Link>
 
         {/* Center: Visual Geometry Picker Button */}
         <button
           type="button"
           onClick={() => setIsSelectorOpen(true)}
-          className="flex items-center gap-2 rounded-full border-2 border-border bg-white text-foreground px-3.5 py-1.5 shadow-[3px_3px_0px_#1E293B] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#1E293B] active:translate-y-0.5 transition-all cursor-pointer"
+          className="flex items-center gap-1.5 sm:gap-2 rounded-full border-2 border-border bg-white text-foreground px-2.5 sm:px-3.5 py-1 sm:py-1.5 shadow-[2px_2px_0px_#1E293B] sm:shadow-[3px_3px_0px_#1E293B] hover:-translate-y-0.5 active:translate-y-0.5 transition-all cursor-pointer min-w-0"
         >
-          <div className="flex size-5 items-center justify-center rounded-md bg-[#8B5CF6] text-white font-bold text-[10px]">
+          <div className="flex size-4.5 sm:size-5 items-center justify-center rounded-md bg-[#8B5CF6] text-white font-bold text-[9px] sm:text-[10px] shrink-0">
             #{activeGeometry.targetIndex}
           </div>
-          <span className="font-heading font-extrabold text-xs sm:text-sm">
+          <span className="font-heading font-extrabold text-xs sm:text-sm truncate max-w-[110px] sm:max-w-none">
             {activeGeometry.name}
           </span>
-          <ChevronDown className="size-3 text-muted-foreground ml-0.5" strokeWidth={2.5} />
+          <ChevronDown className="size-3 text-muted-foreground ml-0.5 shrink-0" strokeWidth={2.5} />
         </button>
 
         {/* Right Action Stack: Mode Toggle & Catalog Button */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Toggle Simulation Mode vs Camera */}
           <Button
             size="sm"
             variant={isSimulationMode ? "candyMint" : "candyYellow"}
             onClick={isSimulationMode ? handleDisableSimulation : handleEnableSimulation}
-            className="shadow-[3px_3px_0px_#1E293B] gap-1.5 text-xs font-bold hidden sm:inline-flex"
+            className="shadow-[2px_2px_0px_#1E293B] sm:shadow-[3px_3px_0px_#1E293B] gap-1 sm:gap-1.5 text-xs font-bold h-8 sm:h-9 px-2 sm:px-3"
             title={isSimulationMode ? "Kembali ke Kamera WebAR" : "Mode Simulasi 3D"}
           >
             {isSimulationMode ? (
               <>
                 <Scan className="size-3.5" strokeWidth={2.5} />
-                <span>Kamera</span>
+                <span className="hidden sm:inline">Kamera</span>
               </>
             ) : (
               <>
                 <Gamepad2 className="size-3.5" strokeWidth={2.5} />
-                <span>Simulasi</span>
+                <span className="hidden sm:inline">Simulasi</span>
               </>
             )}
           </Button>
@@ -749,10 +749,10 @@ export function ARScanner() {
             size="icon-sm"
             variant="candySecondary"
             onClick={() => setIsMarkerModalOpen(true)}
-            className="shadow-[3px_3px_0px_#1E293B]"
+            className="shadow-[2px_2px_0px_#1E293B] sm:shadow-[3px_3px_0px_#1E293B] size-8 sm:size-9"
             title="Lihat Gambar Pola Marker"
           >
-            <Layers className="size-4 text-[#8B5CF6]" strokeWidth={2.5} />
+            <Layers className="size-3.5 sm:size-4 text-[#8B5CF6]" strokeWidth={2.5} />
           </Button>
         </div>
       </header>
@@ -826,106 +826,109 @@ export function ARScanner() {
       )}
 
       {/* 6. Bottom Floating Action Bar HUD */}
-      <footer className="absolute bottom-5 inset-x-0 z-30 flex flex-col items-center gap-2.5 px-3">
+      <footer className="absolute bottom-3 sm:bottom-5 inset-x-0 z-30 flex flex-col items-center gap-2 px-2 sm:px-3">
         {isModelVisible ? (
           /* Controls Active when Model is Visible - Playful Floating Dock */
-          <div className="flex flex-col items-center gap-2 animate-in fade-in slide-in-from-bottom duration-200">
-            <div className="flex items-center gap-2 rounded-full border-2 border-border bg-white p-1.5 shadow-[6px_6px_0px_#1E293B]">
+          <div className="flex flex-col items-center gap-1.5 sm:gap-2 animate-in fade-in slide-in-from-bottom duration-200 w-full max-w-sm">
+            <div className="flex items-center justify-center gap-1 sm:gap-2 rounded-full border-2 border-border bg-white p-1 sm:p-1.5 shadow-[4px_4px_0px_#1E293B] sm:shadow-[6px_6px_0px_#1E293B]">
               <Button
                 size="sm"
                 variant={isAutoRotate ? "candyMint" : "candySecondary"}
                 onClick={toggleAutoRotate}
-                className="h-8 px-3 text-xs gap-1.5"
+                className="h-7 sm:h-8 px-2 sm:px-3 text-[11px] sm:text-xs gap-1"
                 title="Toggle Putar Otomatis"
               >
-                <RotateCw className={`size-3.5 ${isAutoRotate ? "animate-spin" : ""}`} strokeWidth={2.5} />
+                <RotateCw className={`size-3 sm:size-3.5 ${isAutoRotate ? "animate-spin" : ""}`} strokeWidth={2.5} />
                 <span>Rotasi</span>
               </Button>
 
-              <div className="h-4 w-0.5 bg-border" />
+              <div className="h-3.5 sm:h-4 w-0.5 bg-border" />
 
               <Button
-                size="icon-sm"
+                size="icon-xs"
                 variant="candySecondary"
                 onClick={() => handleZoom(0.2)}
                 title="Perbesar Model (Zoom In)"
+                className="size-7 sm:size-8"
               >
-                <ZoomIn className="size-4" strokeWidth={2.5} />
+                <ZoomIn className="size-3.5 sm:size-4" strokeWidth={2.5} />
               </Button>
 
               <Button
-                size="icon-sm"
+                size="icon-xs"
                 variant="candySecondary"
                 onClick={() => handleZoom(-0.2)}
                 title="Perkecil Model (Zoom Out)"
+                className="size-7 sm:size-8"
               >
-                <ZoomOut className="size-4" strokeWidth={2.5} />
+                <ZoomOut className="size-3.5 sm:size-4" strokeWidth={2.5} />
               </Button>
 
               <Button
-                size="icon-sm"
+                size="icon-xs"
                 variant="candySecondary"
                 onClick={handleReset}
                 title="Reset Ukuran & Posisi"
+                className="size-7 sm:size-8"
               >
-                <RotateCcw className="size-4" strokeWidth={2.5} />
+                <RotateCcw className="size-3.5 sm:size-4" strokeWidth={2.5} />
               </Button>
 
-              <div className="h-4 w-0.5 bg-border" />
+              <div className="h-3.5 sm:h-4 w-0.5 bg-border" />
 
               {/* Formula Details Toggle */}
               <Button
                 size="sm"
                 variant="candy"
                 onClick={() => setIsFormulaDrawerOpen(true)}
-                className="h-8 px-3.5 text-xs gap-1.5"
+                className="h-7 sm:h-8 px-2.5 sm:px-3.5 text-[11px] sm:text-xs gap-1"
               >
-                <BookOpen className="size-3.5" strokeWidth={2.5} />
+                <BookOpen className="size-3 sm:size-3.5" strokeWidth={2.5} />
                 <span>Rumus</span>
               </Button>
             </div>
 
             {/* Quick Button to Reset / Switch Mode */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <Button
                 size="xs"
                 variant="candySecondary"
                 onClick={handleResetScan}
-                className="text-[11px] gap-1 shadow-[3px_3px_0px_#1E293B]"
+                className="text-[10px] sm:text-[11px] gap-1 shadow-[2px_2px_0px_#1E293B] h-6.5 sm:h-7 px-2.5"
               >
-                <RefreshCw className="size-3" strokeWidth={2.5} />
-                <span>{isSimulationMode ? "Ganti ke Kamera" : "Lepas / Pindai Ulang"}</span>
+                <RefreshCw className="size-2.5 sm:size-3" strokeWidth={2.5} />
+                <span>{isSimulationMode ? "Ke Kamera" : "Lepas Marker"}</span>
               </Button>
 
               <Button
                 size="xs"
                 variant="candySecondary"
                 onClick={() => setIsSelectorOpen(true)}
-                className="text-[11px] gap-1 shadow-[3px_3px_0px_#1E293B]"
+                className="text-[10px] sm:text-[11px] gap-1 shadow-[2px_2px_0px_#1E293B] h-6.5 sm:h-7 px-2.5"
               >
-                <Shapes className="size-3 text-accent" strokeWidth={2.5} />
-                <span>Pilih Bangun Lain</span>
+                <Shapes className="size-2.5 sm:size-3 text-accent" strokeWidth={2.5} />
+                <span>Pilih Bangun</span>
               </Button>
             </div>
           </div>
         ) : (
           /* Helper hint when marker is not yet detected */
-          <div className="flex flex-col sm:flex-row items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2 max-w-[92vw]">
             <Button
               size="sm"
               variant="candySecondary"
               onClick={() => setIsMarkerModalOpen(true)}
-              className="shadow-[4px_4px_0px_#1E293B] text-xs gap-2 py-2 px-4"
+              className="shadow-[3px_3px_0px_#1E293B] sm:shadow-[4px_4px_0px_#1E293B] text-[11px] sm:text-xs gap-1.5 py-1.5 px-3 h-8 sm:h-9"
             >
-              <Lightbulb className="size-4 text-tertiary shrink-0" strokeWidth={2.5} />
-              <span>Belum punya kartu? Buka Katalog Marker</span>
+              <Lightbulb className="size-3.5 sm:size-4 text-tertiary shrink-0" strokeWidth={2.5} />
+              <span>Belum punya kartu? Buka Katalog</span>
             </Button>
 
             <Button
               size="sm"
               variant="candyMint"
               onClick={handleEnableSimulation}
-              className="shadow-[4px_4px_0px_#1E293B] text-xs gap-1.5 py-2 px-3 sm:hidden"
+              className="shadow-[3px_3px_0px_#1E293B] sm:shadow-[4px_4px_0px_#1E293B] text-[11px] sm:text-xs gap-1.5 py-1.5 px-3 h-8 sm:h-9 sm:hidden"
             >
               <Gamepad2 className="size-3.5" strokeWidth={2.5} />
               <span>Mode Simulasi</span>
@@ -936,72 +939,73 @@ export function ARScanner() {
 
       {/* 7. Bottom Drawer / Sheet for Formula & Characteristics Styled as Playful Study Card */}
       {isFormulaDrawerOpen && (
-        <div className="absolute inset-x-0 bottom-0 z-50 max-h-[80vh] overflow-y-auto rounded-t-3xl border-t-4 border-x-4 border-border bg-[#FFFDF5] p-5 sm:p-6 shadow-[0px_-6px_0px_#1E293B] animate-in slide-in-from-bottom duration-200">
+        <div className="absolute inset-x-0 bottom-0 z-50 max-h-[80vh] overflow-y-auto rounded-t-2xl sm:rounded-t-3xl border-t-3 sm:border-t-4 border-x-3 sm:border-x-4 border-border bg-[#FFFDF5] p-3.5 sm:p-6 shadow-[0px_-4px_0px_#1E293B] sm:shadow-[0px_-6px_0px_#1E293B] animate-in slide-in-from-bottom duration-200">
           <div className="mx-auto max-w-xl">
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b-2 border-border">
-              <div className="flex items-center gap-2.5">
-                <div className="flex size-9 items-center justify-center rounded-xl border-2 border-border bg-[#8B5CF6] text-white shadow-[2px_2px_0px_#1E293B]">
-                  <Sparkles className="size-5" strokeWidth={2.5} />
+            <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b-2 border-border">
+              <div className="flex items-center gap-2 sm:gap-2.5">
+                <div className="flex size-7.5 sm:size-9 items-center justify-center rounded-lg sm:rounded-xl border-2 border-border bg-[#8B5CF6] text-white shadow-[2px_2px_0px_#1E293B]">
+                  <Sparkles className="size-4 sm:size-5" strokeWidth={2.5} />
                 </div>
                 <div>
-                  <h3 className="font-heading text-lg font-black text-foreground">
+                  <h3 className="font-heading text-base sm:text-lg font-black text-foreground">
                     {activeGeometry.name}
                   </h3>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase">
+                  <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase">
                     Target Marker #{activeGeometry.targetIndex}
                   </p>
                 </div>
               </div>
 
               <Button
-                size="icon-sm"
+                size="icon-xs"
                 variant="candySecondary"
                 onClick={() => setIsFormulaDrawerOpen(false)}
                 aria-label="Tutup panel rumus"
+                className="size-7 sm:size-8"
               >
-                <X className="size-4" strokeWidth={2.5} />
+                <X className="size-3.5 sm:size-4" strokeWidth={2.5} />
               </Button>
             </div>
 
             {/* Formula Cards */}
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
               {/* Volume Formula */}
-              <div className="rounded-2xl border-2 border-border bg-[#EEF2FF] p-4 shadow-[4px_4px_0px_#1E293B]">
-                <Badge variant="violet" size="sm" className="mb-2 uppercase tracking-wider">
+              <div className="rounded-xl sm:rounded-2xl border-2 border-border bg-[#EEF2FF] p-3 sm:p-4 shadow-[3px_3px_0px_#1E293B] sm:shadow-[4px_4px_0px_#1E293B]">
+                <Badge variant="violet" size="sm" className="mb-1.5 uppercase tracking-wider text-[10px]">
                   Rumus Volume
                 </Badge>
-                <p className="font-mono text-xl font-black text-foreground">
+                <p className="font-mono text-lg sm:text-xl font-black text-foreground">
                   {activeGeometry.formulaVolume.formula}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                <p className="mt-1 text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
                   {activeGeometry.formulaVolume.description}
                 </p>
               </div>
 
               {/* Surface Area Formula */}
-              <div className="rounded-2xl border-2 border-border bg-[#ECFDF5] p-4 shadow-[4px_4px_0px_#1E293B]">
-                <Badge variant="mint" size="sm" className="mb-2 uppercase tracking-wider">
+              <div className="rounded-xl sm:rounded-2xl border-2 border-border bg-[#ECFDF5] p-3 sm:p-4 shadow-[3px_3px_0px_#1E293B] sm:shadow-[4px_4px_0px_#1E293B]">
+                <Badge variant="mint" size="sm" className="mb-1.5 uppercase tracking-wider text-[10px]">
                   Luas Permukaan
                 </Badge>
-                <p className="font-mono text-xl font-black text-foreground">
+                <p className="font-mono text-lg sm:text-xl font-black text-foreground">
                   {activeGeometry.formulaSurface.formula}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                <p className="mt-1 text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
                   {activeGeometry.formulaSurface.description}
                 </p>
               </div>
             </div>
 
             {/* Characteristics List */}
-            <div className="mt-4 rounded-2xl border-2 border-border bg-white p-4 shadow-[4px_4px_0px_#1E293B]">
-              <h4 className="font-heading text-xs font-extrabold text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <div className="mt-3 sm:mt-4 rounded-xl sm:rounded-2xl border-2 border-border bg-white p-3 sm:p-4 shadow-[3px_3px_0px_#1E293B] sm:shadow-[4px_4px_0px_#1E293B]">
+              <h4 className="font-heading text-[11px] sm:text-xs font-extrabold text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <span className="size-2 rounded-full bg-[#F472B6]" />
                 <span>Karakteristik & Ciri Bangun Ruang</span>
               </h4>
-              <ul className="space-y-1.5 text-xs text-foreground">
+              <ul className="space-y-1 sm:space-y-1.5 text-[11px] sm:text-xs text-foreground">
                 {activeGeometry.characteristics.map((c, i) => (
-                  <li key={i} className="flex items-start gap-2">
+                  <li key={i} className="flex items-start gap-1.5">
                     <span className="text-[#8B5CF6] font-black select-none">●</span>
                     <span className="leading-relaxed">{c}</span>
                   </li>
@@ -1010,15 +1014,15 @@ export function ARScanner() {
             </div>
 
             {/* Variables Legend */}
-            <div className="mt-4 pt-3 border-t-2 border-border">
-              <h4 className="font-heading text-xs font-extrabold text-muted-foreground uppercase tracking-wider mb-2">
+            <div className="mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t-2 border-border">
+              <h4 className="font-heading text-[11px] sm:text-xs font-extrabold text-muted-foreground uppercase tracking-wider mb-2">
                 Keterangan Variabel
               </h4>
-              <div className="flex flex-wrap gap-2 text-xs">
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
                 {Object.entries(activeGeometry.variables).map(([key, val]) => (
                   <div
                     key={key}
-                    className="flex items-center gap-1.5 rounded-lg border-2 border-border bg-white px-2.5 py-1 shadow-[2px_2px_0px_#1E293B]"
+                    className="flex items-center gap-1 sm:gap-1.5 rounded-lg border-2 border-border bg-white px-2 py-0.5 sm:px-2.5 sm:py-1 shadow-[1.5px_1.5px_0px_#1E293B]"
                   >
                     <span className="font-mono font-bold text-[#8B5CF6]">{key}</span>
                     <span className="text-muted-foreground">=</span>
@@ -1036,12 +1040,12 @@ export function ARScanner() {
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <div className="flex items-center gap-2">
-              <Badge variant="yellow">
+              <Badge variant="yellow" size="sm">
                 <Shapes className="size-3" strokeWidth={2.5} />
                 <span>PILIHAN MODEL</span>
               </Badge>
             </div>
-            <DialogTitle className="mt-1 text-xl font-black">
+            <DialogTitle className="mt-1 text-lg sm:text-xl font-black">
               Pilih Bangun Ruang 3D 🎯
             </DialogTitle>
             <DialogDescription className="text-xs">
@@ -1049,7 +1053,7 @@ export function ARScanner() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[50vh] overflow-y-auto pr-1">
+          <div className="mt-2.5 sm:mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 max-h-[50vh] overflow-y-auto pr-1">
             {GEOMETRIES.map((g) => {
               const isSelected = g.id === activeGeometry.id;
               return (
@@ -1061,13 +1065,13 @@ export function ARScanner() {
                     setIsSelectorOpen(false);
                   }}
                   className={cn(
-                    "flex items-center gap-3 rounded-2xl border-2 border-border p-3 text-left transition-all cursor-pointer",
+                    "flex items-center gap-2.5 rounded-xl sm:rounded-2xl border-2 border-border p-2 sm:p-2.5 text-left transition-all cursor-pointer",
                     isSelected
-                      ? "bg-[#8B5CF6]/15 border-[#8B5CF6] shadow-[3px_3px_0px_#8B5CF6]"
+                      ? "bg-[#8B5CF6]/15 border-[#8B5CF6] shadow-[2.5px_2.5px_0px_#8B5CF6]"
                       : "bg-white hover:bg-muted shadow-[2px_2px_0px_#1E293B]"
                   )}
                 >
-                  <div className="relative size-12 shrink-0 rounded-xl border-2 border-border bg-slate-900 flex items-center justify-center p-1 overflow-hidden">
+                  <div className="relative size-10 sm:size-12 shrink-0 rounded-lg sm:rounded-xl border-2 border-border bg-slate-900 flex items-center justify-center p-1 overflow-hidden">
                     <Image
                       src={g.markerPreviewPath}
                       alt={g.name}
@@ -1082,11 +1086,11 @@ export function ARScanner() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-heading font-bold text-sm text-foreground truncate">
+                      <h4 className="font-heading font-bold text-xs sm:text-sm text-foreground truncate">
                         {g.name}
                       </h4>
                       {isSelected && (
-                        <Check className="size-4 text-[#8B5CF6] shrink-0" strokeWidth={3} />
+                        <Check className="size-3.5 sm:size-4 text-[#8B5CF6] shrink-0" strokeWidth={3} />
                       )}
                     </div>
                     <p className="text-[10px] font-mono text-[#8B5CF6] truncate mt-0.5">
