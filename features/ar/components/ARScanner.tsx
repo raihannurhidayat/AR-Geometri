@@ -1,0 +1,613 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import * as THREE from "three";
+import {
+  ArrowLeft,
+  RotateCw,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  BookOpen,
+  HelpCircle,
+  CameraOff,
+  Sparkles,
+  ChevronUp,
+  X,
+} from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { GEOMETRIES } from "@/features/geometry/data/geometries";
+import { GeometryItem, ScannerStatus } from "@/features/geometry/types/geometry";
+import { MarkerModal } from "@/features/geometry/components/MarkerModal";
+
+export function ARScanner() {
+  const videoRef = React.useRef<HTMLVideoElement | null>(null);
+  const canvasContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const streamRef = React.useRef<MediaStream | null>(null);
+
+  // Three.js instances ref
+  const threeRef = React.useRef<{
+    scene: THREE.Scene;
+    camera: THREE.PerspectiveCamera;
+    renderer: THREE.WebGLRenderer;
+    activeMeshGroup: THREE.Group;
+    animationFrameId: number;
+  } | null>(null);
+
+  const [status, setStatus] = React.useState<ScannerStatus>("requesting_permission");
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [errorHelpTip, setErrorHelpTip] = React.useState<string | null>(null);
+  const [activeGeometry, setActiveGeometry] = React.useState<GeometryItem>(GEOMETRIES[0]);
+  const [isMarkerDetected, setIsMarkerDetected] = React.useState<boolean>(true);
+  const [isAutoRotate, setIsAutoRotate] = React.useState<boolean>(true);
+  const [isFormulaDrawerOpen, setIsFormulaDrawerOpen] = React.useState<boolean>(false);
+  const [scaleFactor, setScaleFactor] = React.useState<number>(1);
+  const [isMarkerModalOpen, setIsMarkerModalOpen] = React.useState<boolean>(false);
+
+  // 1. Camera Lifecycle & Initialization
+  const requestCameraStream = React.useCallback(async (isMounted: () => boolean) => {
+    if (typeof window !== "undefined" && !window.isSecureContext && window.location.hostname !== "localhost") {
+      if (isMounted()) {
+        setStatus("error");
+        setErrorMessage("Koneksi Tidak Aman (Insecure HTTP)");
+        setErrorHelpTip("Akses kamera pada browser mewajibkan koneksi HTTPS atau domain localhost.");
+      }
+      return;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (isMounted()) {
+        setStatus("error");
+        setErrorMessage("Kamera Tidak Didukung");
+        setErrorHelpTip("Browser Anda tidak mendukung WebRTC Camera API. Coba gunakan Google Chrome atau Safari terbaru.");
+      }
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+
+      if (!isMounted()) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setStatus("ready");
+      setTimeout(() => {
+        if (isMounted()) {
+          setStatus("detected");
+        }
+      }, 800);
+    } catch (err: unknown) {
+      if (!isMounted()) return;
+      console.error("Camera access error:", err);
+      setStatus("error");
+      const errorObj = err as { name?: string; message?: string };
+      if (errorObj.name === "NotAllowedError" || errorObj.name === "PermissionDeniedError") {
+        setErrorMessage("Izin Akses Kamera Ditolak");
+        setErrorHelpTip("Silakan klik ikon gembok di sebelah bilah alamat URL browser Anda, aktifkan izin Kamera, lalu muat ulang halaman ini.");
+      } else if (errorObj.name === "NotFoundError" || errorObj.name === "DevicesNotFoundError") {
+        setErrorMessage("Kamera Tidak Ditemukan");
+        setErrorHelpTip("Perangkat Anda tidak memiliki modul kamera yang aktif atau sedang digunakan aplikasi lain.");
+      } else {
+        setErrorMessage("Gagal Membuka Kamera");
+        setErrorHelpTip(errorObj.message || "Terjadi kendala saat menghubungkan kamera perangkat.");
+      }
+    }
+  }, []);
+
+  const handleRetryCamera = React.useCallback(() => {
+    setStatus("requesting_permission");
+    setErrorMessage(null);
+    setErrorHelpTip(null);
+    void requestCameraStream(() => true);
+  }, [requestCameraStream]);
+
+  // 2. Stop Camera & Cleanup
+  const stopCamera = React.useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  }, []);
+
+  // 3. Three.js Procedural 3D Mesh Generator for Geometries
+  const create3DMeshForGeometry = React.useCallback((geomId: string): THREE.Group => {
+    const group = new THREE.Group();
+
+    const mainMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0x3b82f6,
+      metalness: 0.1,
+      roughness: 0.2,
+      transmission: 0.2,
+      transparent: true,
+      opacity: 0.92,
+      clearcoat: 0.5,
+      clearcoatRoughness: 0.1,
+    });
+
+    const wireframeMaterial = new THREE.LineBasicMaterial({
+      color: 0xffffff,
+      linewidth: 2,
+    });
+
+    let geometry: THREE.BufferGeometry;
+
+    switch (geomId) {
+      case "cube":
+        geometry = new THREE.BoxGeometry(2, 2, 2);
+        mainMaterial.color.setHex(0x3b82f6); // Indigo Blue
+        break;
+      case "cuboid":
+        geometry = new THREE.BoxGeometry(2.8, 1.6, 1.8);
+        mainMaterial.color.setHex(0x06b6d4); // Cyan
+        break;
+      case "prism":
+        // Triangular Prism: 3-sided cylinder
+        geometry = new THREE.CylinderGeometry(1.6, 1.6, 2.4, 3);
+        mainMaterial.color.setHex(0x10b981); // Emerald
+        break;
+      case "pyramid":
+        // 4-sided cone is a square pyramid
+        geometry = new THREE.ConeGeometry(1.8, 2.4, 4);
+        mainMaterial.color.setHex(0xf59e0b); // Amber
+        break;
+      case "cylinder":
+        geometry = new THREE.CylinderGeometry(1.2, 1.2, 2.5, 32);
+        mainMaterial.color.setHex(0x8b5cf6); // Purple
+        break;
+      case "cone":
+        geometry = new THREE.ConeGeometry(1.5, 2.6, 32);
+        mainMaterial.color.setHex(0xf43f5e); // Rose
+        break;
+      case "sphere":
+        geometry = new THREE.SphereGeometry(1.4, 32, 24);
+        mainMaterial.color.setHex(0x4f46e5); // Deep Indigo
+        break;
+      default:
+        geometry = new THREE.BoxGeometry(2, 2, 2);
+    }
+
+    const mesh = new THREE.Mesh(geometry, mainMaterial);
+    group.add(mesh);
+
+    // Add glowing edges
+    const edges = new THREE.EdgesGeometry(geometry);
+    const line = new THREE.LineSegments(edges, wireframeMaterial);
+    group.add(line);
+
+    return group;
+  }, []);
+
+  // 4. Initialize Three.js Scene
+  React.useEffect(() => {
+    if (!canvasContainerRef.current) return;
+
+    const container = canvasContainerRef.current;
+    const width = container.clientWidth || window.innerWidth;
+    const height = container.clientHeight || window.innerHeight;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.set(0, 0, 6);
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.innerHTML = "";
+    container.appendChild(renderer.domElement);
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    scene.add(ambientLight);
+
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.5);
+    dirLight1.position.set(5, 10, 7);
+    scene.add(dirLight1);
+
+    const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 1);
+    dirLight2.position.set(-5, -5, 2);
+    scene.add(dirLight2);
+
+    const activeMeshGroup = new THREE.Group();
+    scene.add(activeMeshGroup);
+
+    threeRef.current = {
+      scene,
+      camera,
+      renderer,
+      activeMeshGroup,
+      animationFrameId: 0,
+    };
+
+    // Render loop
+    const animate = () => {
+      if (threeRef.current) {
+        if (isAutoRotate && threeRef.current.activeMeshGroup) {
+          threeRef.current.activeMeshGroup.rotation.y += 0.012;
+          threeRef.current.activeMeshGroup.rotation.x += 0.005;
+        }
+        threeRef.current.renderer.render(threeRef.current.scene, threeRef.current.camera);
+        threeRef.current.animationFrameId = requestAnimationFrame(animate);
+      }
+    };
+    animate();
+
+    const handleResize = () => {
+      if (!threeRef.current || !canvasContainerRef.current) return;
+      const w = canvasContainerRef.current.clientWidth;
+      const h = canvasContainerRef.current.clientHeight;
+      threeRef.current.camera.aspect = w / h;
+      threeRef.current.camera.updateProjectionMatrix();
+      threeRef.current.renderer.setSize(w, h);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (threeRef.current) {
+        cancelAnimationFrame(threeRef.current.animationFrameId);
+        threeRef.current.renderer.dispose();
+      }
+    };
+  }, [isAutoRotate]);
+
+  // 5. Update 3D Model when activeGeometry or isMarkerDetected changes
+  React.useEffect(() => {
+    if (!threeRef.current) return;
+    const { activeMeshGroup } = threeRef.current;
+
+    // Clear previous children
+    while (activeMeshGroup.children.length > 0) {
+      activeMeshGroup.remove(activeMeshGroup.children[0]);
+    }
+
+    if (isMarkerDetected) {
+      const newMesh = create3DMeshForGeometry(activeGeometry.id);
+      activeMeshGroup.add(newMesh);
+      activeMeshGroup.scale.set(scaleFactor, scaleFactor, scaleFactor);
+    }
+  }, [activeGeometry, isMarkerDetected, create3DMeshForGeometry, scaleFactor]);
+
+  // 6. Camera Lifecycle on mount/unmount
+  React.useEffect(() => {
+    let mounted = true;
+    const timer = setTimeout(() => {
+      void requestCameraStream(() => mounted);
+    }, 0);
+
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+      stopCamera();
+    };
+  }, [requestCameraStream, stopCamera]);
+
+  // User Actions
+  const handleZoom = (delta: number) => {
+    setScaleFactor((prev) => {
+      const next = Math.min(Math.max(prev + delta, 0.5), 2.2);
+      if (threeRef.current) {
+        threeRef.current.activeMeshGroup.scale.set(next, next, next);
+      }
+      return next;
+    });
+  };
+
+  const handleReset = () => {
+    setScaleFactor(1);
+    if (threeRef.current) {
+      threeRef.current.activeMeshGroup.scale.set(1, 1, 1);
+      threeRef.current.activeMeshGroup.rotation.set(0, 0, 0);
+    }
+  };
+
+  return (
+    <div className="relative h-screen w-screen overflow-hidden bg-black text-white select-none">
+      {/* 1. Live Background Video Stream */}
+      <video
+        ref={videoRef}
+        playsInline
+        autoPlay
+        muted
+        className="absolute inset-0 h-full w-full object-cover z-0"
+      />
+
+      {/* Subtle overlay shading for HUD readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/70 pointer-events-none z-10" />
+
+      {/* 2. Three.js 3D Virtual Canvas */}
+      <div
+        ref={canvasContainerRef}
+        className="absolute inset-0 h-full w-full z-20 pointer-events-none"
+      />
+
+      {/* 3. Scanning Reticle (Center Guide) */}
+      <div className="absolute inset-0 z-15 flex flex-col items-center justify-center pointer-events-none">
+        <div className="relative size-64 sm:size-72 border-2 border-dashed border-white/40 rounded-3xl flex items-center justify-center transition-all duration-300">
+          {/* Animated Scanning Line */}
+          {status !== "error" && (
+            <div className="absolute inset-x-2 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_12px_#38bdf8] animate-pulse top-1/2 -translate-y-1/2" />
+          )}
+
+          {/* Corner Markers */}
+          <div className="absolute -top-1.5 -left-1.5 size-6 border-t-4 border-l-4 border-cyan-400 rounded-tl-xl" />
+          <div className="absolute -top-1.5 -right-1.5 size-6 border-t-4 border-r-4 border-cyan-400 rounded-tr-xl" />
+          <div className="absolute -bottom-1.5 -left-1.5 size-6 border-b-4 border-l-4 border-cyan-400 rounded-bl-xl" />
+          <div className="absolute -bottom-1.5 -right-1.5 size-6 border-b-4 border-r-4 border-cyan-400 rounded-br-xl" />
+
+          {/* Instruction inside or below reticle */}
+          <div className="absolute -bottom-14 text-center px-4">
+            <span className="rounded-full bg-black/60 backdrop-blur-md px-3.5 py-1 text-xs font-medium text-slate-200 border border-white/10 shadow-sm">
+              {isMarkerDetected
+                ? `Marker Terdeteksi: ${activeGeometry.name}`
+                : "Arahkan kamera tegak lurus ke kartu marker"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Top Floating Header HUD */}
+      <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between p-4 sm:p-6">
+        <Link
+          href="/"
+          onClick={stopCamera}
+          className={cn(
+            buttonVariants({ size: "sm", variant: "outline" }),
+            "rounded-full bg-black/50 backdrop-blur-md border-white/20 text-white hover:bg-black/70 hover:text-white flex items-center gap-1.5 text-xs font-semibold"
+          )}
+        >
+          <ArrowLeft className="size-4" />
+          <span>Beranda</span>
+        </Link>
+
+        {/* Status Badge & Marker Selector */}
+        <div className="flex items-center gap-2">
+          {/* Target Geometry Switcher (Allows testing all 7 shapes immediately) */}
+          <div className="relative">
+            <select
+              aria-label="Pilih Model Bangun Ruang"
+              value={activeGeometry.id}
+              onChange={(e) => {
+                const found = GEOMETRIES.find((g) => g.id === e.target.value);
+                if (found) {
+                  setActiveGeometry(found);
+                  setIsMarkerDetected(true);
+                }
+              }}
+              className="appearance-none rounded-full bg-black/60 backdrop-blur-md border border-cyan-500/40 px-3.5 py-1.5 pr-8 text-xs font-semibold text-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 cursor-pointer"
+            >
+              {GEOMETRIES.map((g) => (
+                <option key={g.id} value={g.id} className="bg-slate-900 text-white">
+                  {g.name} (#{g.targetIndex})
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-cyan-400">
+              <ChevronUp className="size-3 rotate-180" />
+            </div>
+          </div>
+
+          <Button
+            size="icon-sm"
+            variant="outline"
+            onClick={() => setIsMarkerModalOpen(true)}
+            className="rounded-full bg-black/50 backdrop-blur-md border-white/20 text-white hover:bg-black/70"
+            title="Lihat Marker"
+          >
+            <HelpCircle className="size-4 text-cyan-400" />
+          </Button>
+        </div>
+      </header>
+
+      {/* 5. Error Overlay (if camera fails or denied) */}
+      {status === "error" && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-md">
+          <div className="max-w-md w-full rounded-3xl border border-rose-500/30 bg-slate-900/90 p-6 text-center shadow-2xl">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-500 mb-4">
+              <CameraOff className="size-7" />
+            </div>
+            <h3 className="text-xl font-bold text-white">
+              {errorMessage || "Tidak Dapat Mengakses Kamera"}
+            </h3>
+            <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+              {errorHelpTip || "Pastikan peramban Anda memiliki izin akses ke kamera perangkat."}
+            </p>
+
+            <div className="mt-6 flex flex-col gap-2.5">
+              <Button
+                onClick={handleRetryCamera}
+                className="w-full rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold"
+              >
+                Coba Buka Kamera Lagi
+              </Button>
+              <Link
+                href="/"
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "w-full rounded-xl border-white/20 text-white hover:bg-white/10 flex items-center justify-center text-sm"
+                )}
+              >
+                Kembali ke Halaman Beranda
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Bottom Floating Action Bar HUD */}
+      <footer className="absolute bottom-6 inset-x-0 z-30 flex flex-col items-center gap-3 px-4">
+        {/* Quick Toggle Controls */}
+        <div className="flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-md border border-white/20 p-1.5 shadow-xl">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setIsAutoRotate(!isAutoRotate)}
+            className={`rounded-full h-8 px-3 text-xs gap-1.5 ${
+              isAutoRotate ? "bg-cyan-500/20 text-cyan-300" : "text-white/80"
+            }`}
+            title="Toggle Putar Otomatis"
+          >
+            <RotateCw className={`size-3.5 ${isAutoRotate ? "animate-spin" : ""}`} />
+            <span className="hidden sm:inline">Rotasi</span>
+          </Button>
+
+          <div className="h-4 w-px bg-white/20" />
+
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            onClick={() => handleZoom(0.2)}
+            className="rounded-full text-white/80 hover:text-white"
+            title="Perbesar Model"
+          >
+            <ZoomIn className="size-3.5" />
+          </Button>
+
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            onClick={() => handleZoom(-0.2)}
+            className="rounded-full text-white/80 hover:text-white"
+            title="Perkecil Model"
+          >
+            <ZoomOut className="size-3.5" />
+          </Button>
+
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            onClick={handleReset}
+            className="rounded-full text-white/80 hover:text-white"
+            title="Reset Ukuran & Posisi"
+          >
+            <RotateCcw className="size-3.5" />
+          </Button>
+
+          <div className="h-4 w-px bg-white/20" />
+
+          {/* Formula Details Toggle */}
+          <Button
+            size="sm"
+            onClick={() => setIsFormulaDrawerOpen(true)}
+            className="rounded-full h-8 px-3 text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold gap-1.5"
+          >
+            <BookOpen className="size-3.5" />
+            <span>Rumus & Info</span>
+          </Button>
+        </div>
+      </footer>
+
+      {/* 7. Bottom Drawer / Sheet for Formula & Characteristics */}
+      {isFormulaDrawerOpen && (
+        <div className="absolute inset-x-0 bottom-0 z-50 max-h-[75vh] overflow-y-auto rounded-t-3xl border-t border-border bg-slate-900/95 p-6 backdrop-blur-xl shadow-2xl animate-in slide-in-from-bottom duration-200">
+          <div className="mx-auto max-w-xl">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-9 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400">
+                  <Sparkles className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">
+                    {activeGeometry.name}
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Target Marker #{activeGeometry.targetIndex}
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                onClick={() => setIsFormulaDrawerOpen(false)}
+                className="rounded-full text-slate-400 hover:text-white"
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+
+            {/* Formula Cards */}
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/40 p-4">
+                <span className="text-[11px] font-semibold text-indigo-300 uppercase tracking-wider">
+                  Rumus Volume
+                </span>
+                <p className="mt-1 text-xl font-mono font-bold text-white">
+                  {activeGeometry.formulaVolume.formula}
+                </p>
+                <p className="mt-1 text-xs text-indigo-200/80 leading-relaxed">
+                  {activeGeometry.formulaVolume.description}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-cyan-500/30 bg-cyan-950/40 p-4">
+                <span className="text-[11px] font-semibold text-cyan-300 uppercase tracking-wider">
+                  Rumus Luas Permukaan
+                </span>
+                <p className="mt-1 text-xl font-mono font-bold text-white">
+                  {activeGeometry.formulaSurface.formula}
+                </p>
+                <p className="mt-1 text-xs text-cyan-200/80 leading-relaxed">
+                  {activeGeometry.formulaSurface.description}
+                </p>
+              </div>
+            </div>
+
+            {/* Characteristics */}
+            <div className="mt-4">
+              <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                Karakteristik & Ciri Bangun Ruang
+              </h4>
+              <ul className="space-y-1.5 text-xs text-slate-300">
+                {activeGeometry.characteristics.map((c, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="text-cyan-400 font-bold">•</span>
+                    <span>{c}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Variables Legend */}
+            <div className="mt-4 pt-3 border-t border-white/10">
+              <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Keterangan Variabel
+              </h4>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {Object.entries(activeGeometry.variables).map(([key, val]) => (
+                  <div key={key} className="flex items-center gap-1.5">
+                    <span className="font-mono font-bold text-indigo-400">{key}</span>
+                    <span className="text-slate-400">=</span>
+                    <span className="text-slate-200">{val}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. Marker Catalog Modal within Scanner */}
+      <MarkerModal
+        open={isMarkerModalOpen}
+        onOpenChange={setIsMarkerModalOpen}
+      />
+    </div>
+  );
+}
