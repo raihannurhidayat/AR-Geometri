@@ -825,70 +825,143 @@ export function ARScanner() {
         </div>
       )}
 
-      {/* 6. Bottom Floating Action Bar HUD */}
+      {/* 6. Mobile Vertical 3D Controls Dock (Right-Middle) */}
+      {isModelVisible && (
+        <aside
+          aria-label="Kontrol Interaksi 3D Mobile"
+          className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex sm:hidden flex-col items-center gap-1.5 rounded-2xl border-2 border-border bg-white/95 backdrop-blur-xs p-1.5 shadow-[4px_4px_0px_#1E293B] animate-in fade-in duration-200"
+        >
+          {/* Toggle Auto-Rotate */}
+          <Button
+            size="icon-sm"
+            variant={isAutoRotate ? "candyMint" : "candySecondary"}
+            onClick={toggleAutoRotate}
+            className="size-8.5"
+            title={isAutoRotate ? "Matikan Putar Otomatis" : "Nyalakan Putar Otomatis"}
+            aria-label="Toggle putar otomatis"
+          >
+            <RotateCw className={`size-4 ${isAutoRotate ? "animate-spin" : ""}`} strokeWidth={2.5} />
+          </Button>
+
+          <div className="w-3.5 h-0.5 bg-border rounded-full" />
+
+          {/* Zoom In */}
+          <Button
+            size="icon-sm"
+            variant="candySecondary"
+            onClick={() => handleZoom(0.2)}
+            className="size-8.5"
+            title="Perbesar Model (Zoom In)"
+            aria-label="Perbesar model"
+          >
+            <ZoomIn className="size-4" strokeWidth={2.5} />
+          </Button>
+
+          {/* Zoom Out */}
+          <Button
+            size="icon-sm"
+            variant="candySecondary"
+            onClick={() => handleZoom(-0.2)}
+            className="size-8.5"
+            title="Perkecil Model (Zoom Out)"
+            aria-label="Perkecil model"
+          >
+            <ZoomOut className="size-4" strokeWidth={2.5} />
+          </Button>
+
+          {/* Reset Scale & Orientation */}
+          <Button
+            size="icon-sm"
+            variant="candySecondary"
+            onClick={handleReset}
+            className="size-8.5"
+            title="Reset Ukuran & Posisi"
+            aria-label="Reset ukuran dan posisi model"
+          >
+            <RotateCcw className="size-4" strokeWidth={2.5} />
+          </Button>
+
+          <div className="w-3.5 h-0.5 bg-border rounded-full" />
+
+          {/* Formula Details Toggle */}
+          <Button
+            size="icon-sm"
+            variant="candy"
+            onClick={() => setIsFormulaDrawerOpen(true)}
+            className="size-8.5"
+            title="Lihat Rumus & Ciri Geometri"
+            aria-label="Buka rumus dan karakteristik bangun ruang"
+          >
+            <BookOpen className="size-4" strokeWidth={2.5} />
+          </Button>
+        </aside>
+      )}
+
+      {/* 7. Bottom Floating Action Bar HUD */}
       <footer className="absolute bottom-3 sm:bottom-5 inset-x-0 z-30 flex flex-col items-center gap-2 px-2 sm:px-3">
         {isModelVisible ? (
-          /* Controls Active when Model is Visible - Playful Floating Dock */
+          /* Controls Active when Model is Visible */
           <div className="flex flex-col items-center gap-1.5 sm:gap-2 animate-in fade-in slide-in-from-bottom duration-200 w-full max-w-sm">
-            <div className="flex items-center justify-center gap-1 sm:gap-2 rounded-full border-2 border-border bg-white p-1 sm:p-1.5 shadow-[4px_4px_0px_#1E293B] sm:shadow-[6px_6px_0px_#1E293B]">
+            {/* Desktop Horizontal Floating Dock (Hidden on mobile) */}
+            <div className="hidden sm:flex items-center justify-center gap-2 rounded-full border-2 border-border bg-white p-1.5 shadow-[6px_6px_0px_#1E293B]">
               <Button
                 size="sm"
                 variant={isAutoRotate ? "candyMint" : "candySecondary"}
                 onClick={toggleAutoRotate}
-                className="h-7 sm:h-8 px-2 sm:px-3 text-[11px] sm:text-xs gap-1"
+                className="h-8 px-3 text-xs gap-1.5"
                 title="Toggle Putar Otomatis"
               >
-                <RotateCw className={`size-3 sm:size-3.5 ${isAutoRotate ? "animate-spin" : ""}`} strokeWidth={2.5} />
+                <RotateCw className={`size-3.5 ${isAutoRotate ? "animate-spin" : ""}`} strokeWidth={2.5} />
                 <span>Rotasi</span>
               </Button>
 
-              <div className="h-3.5 sm:h-4 w-0.5 bg-border" />
+              <div className="h-4 w-0.5 bg-border" />
 
               <Button
-                size="icon-xs"
+                size="icon-sm"
                 variant="candySecondary"
                 onClick={() => handleZoom(0.2)}
                 title="Perbesar Model (Zoom In)"
-                className="size-7 sm:size-8"
+                className="size-8"
               >
-                <ZoomIn className="size-3.5 sm:size-4" strokeWidth={2.5} />
+                <ZoomIn className="size-4" strokeWidth={2.5} />
               </Button>
 
               <Button
-                size="icon-xs"
+                size="icon-sm"
                 variant="candySecondary"
                 onClick={() => handleZoom(-0.2)}
                 title="Perkecil Model (Zoom Out)"
-                className="size-7 sm:size-8"
+                className="size-8"
               >
-                <ZoomOut className="size-3.5 sm:size-4" strokeWidth={2.5} />
+                <ZoomOut className="size-4" strokeWidth={2.5} />
               </Button>
 
               <Button
-                size="icon-xs"
+                size="icon-sm"
                 variant="candySecondary"
                 onClick={handleReset}
                 title="Reset Ukuran & Posisi"
-                className="size-7 sm:size-8"
+                className="size-8"
               >
-                <RotateCcw className="size-3.5 sm:size-4" strokeWidth={2.5} />
+                <RotateCcw className="size-4" strokeWidth={2.5} />
               </Button>
 
-              <div className="h-3.5 sm:h-4 w-0.5 bg-border" />
+              <div className="h-4 w-0.5 bg-border" />
 
               {/* Formula Details Toggle */}
               <Button
                 size="sm"
                 variant="candy"
                 onClick={() => setIsFormulaDrawerOpen(true)}
-                className="h-7 sm:h-8 px-2.5 sm:px-3.5 text-[11px] sm:text-xs gap-1"
+                className="h-8 px-3.5 text-xs gap-1.5"
               >
-                <BookOpen className="size-3 sm:size-3.5" strokeWidth={2.5} />
+                <BookOpen className="size-3.5" strokeWidth={2.5} />
                 <span>Rumus</span>
               </Button>
             </div>
 
-            {/* Quick Button to Reset / Switch Mode */}
+            {/* Quick Button to Reset / Switch Mode (Visible on Mobile & Desktop) */}
             <div className="flex items-center gap-1.5 sm:gap-2">
               <Button
                 size="xs"
@@ -937,7 +1010,7 @@ export function ARScanner() {
         )}
       </footer>
 
-      {/* 7. Bottom Drawer / Sheet for Formula & Characteristics Styled as Playful Study Card */}
+      {/* 8. Bottom Drawer / Sheet for Formula & Characteristics Styled as Playful Study Card */}
       {isFormulaDrawerOpen && (
         <div className="absolute inset-x-0 bottom-0 z-50 max-h-[80vh] overflow-y-auto rounded-t-2xl sm:rounded-t-3xl border-t-3 sm:border-t-4 border-x-3 sm:border-x-4 border-border bg-[#FFFDF5] p-3.5 sm:p-6 shadow-[0px_-4px_0px_#1E293B] sm:shadow-[0px_-6px_0px_#1E293B] animate-in slide-in-from-bottom duration-200">
           <div className="mx-auto max-w-xl">
